@@ -5,13 +5,25 @@ using System.Linq;
 
 public class MyBot : IChessBot
 {
-    bool MoveIsCheckmate(Board board, Move move)
+    bool move_is_checkmate(Board board, Move move)
     {
         board.MakeMove(move);
-        bool isMate = board.IsInCheckmate();
+        bool is_mate = board.IsInCheckmate();
         board.UndoMove(move);
-        return isMate;
+        return is_mate;
     }
+
+    /*
+    ** when bot is smarter we'll remove this cus it won't need it
+    */
+    bool move_is_draw(Board board, Move move)
+    {
+        board.MakeMove(move);
+        bool is_draw = board.IsRepeatedPosition();
+        board.UndoMove(move);
+        return is_draw;
+    }
+
     Move return_nice_pos(Board board, Move[] all_moves, ref int score)
     {
         Random rng = new();
@@ -19,7 +31,7 @@ public class MyBot : IChessBot
 
         foreach (Move move in all_moves)
         {
-            if (MoveIsCheckmate(board, move))
+            if (move_is_checkmate(board, move))
             {
                 move_result = move;
                 break;
@@ -48,7 +60,7 @@ public class MyBot : IChessBot
         bool bad = false;
         foreach (Move move in all_moves)
         {
-            if (MoveIsCheckmate(board, move))
+            if (move_is_checkmate(board, move) || move_is_draw(board, move))
             {
                 bad = true;
                 break;
@@ -66,37 +78,67 @@ public class MyBot : IChessBot
         return bad;
     }
 
+    Move return_best_pos(Board board, Move[] moves, out int bestCaptureValue)
+    {
+        // Compute from scratch each call
+        bestCaptureValue = int.MinValue;
+        Move best_move = Move.NullMove;
+        Random rng = new();
+
+        // If you want randomness among equals, you could shuffle or pick random start:
+        // But for simplicity, initialize to a random move in case no captures found.
+        if (moves.Length > 0)
+            best_move = moves[rng.Next(moves.Length)];
+
+        foreach (var move in moves)
+        {
+            if (move_is_checkmate(board, move)) {
+                best_move = move;
+                bestCaptureValue = int.MaxValue; // highest priority
+                break;
+            }
+            Piece cap = board.GetPiece(move.TargetSquare);
+            int val = pieceValues[(int)cap.PieceType];
+            if (val > bestCaptureValue)
+            {
+                bestCaptureValue = val;
+                best_move = move;
+            }
+        }
+        // If no captures found, bestCaptureValue may remain int.MinValue; you can normalize that to 0:
+        if (bestCaptureValue < 0)
+            bestCaptureValue = 0;
+        return best_move;
+    }
+
+
     // Piece values: null, pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
     public Move Think(Board board, Timer timer)
     {
         Move[] all_moves = board.GetLegalMoves();
-        List<Move> bad_moves = new List<Move>();
+        HashSet<Move> bad_moves = new HashSet<Move>();
         Random rng = new();
-        Move move_result = all_moves[rng.Next(all_moves.Length)];
-        int score = 0;
+        int bestCap;
+        Move move_result = all_moves[rng.Next(all_moves.Length)];;
 
-        start:
-        //score = 0;
-        /*if i put score = 0 here, my bot suddenly becomes much worse.
-        why?*/
-        // remove bad moves
-        Move[] legal_moves = all_moves.Where(m => !bad_moves.Contains(m)).ToArray();
-
-        // If all moves are bad, return a default one
-        if (legal_moves.Length == 0)
+        while (true)
         {
+            Move[] legal_moves = all_moves.Where(m => !bad_moves.Contains(m)).ToArray();
+            if (legal_moves.Length == 0)
+            {
+                // fallback: no non-bad moves remain; pick any or resign
+                // for now pick a random from all_moves or the last known move
+                return move_result != Move.NullMove ? move_result : all_moves[rng.Next(all_moves.Length)];
+            }
+            move_result = return_best_pos(board, legal_moves, out bestCap);
+
+            if (foot_is_shot(board, bestCap, move_result))
+            {
+                bad_moves.Add(move_result);
+                continue; // retry with remaining moves
+            }
             return move_result;
         }
-
-        move_result = return_nice_pos(board, legal_moves, ref score);
-
-        if (foot_is_shot(board, score, move_result))
-        {
-            bad_moves.Add(move_result);
-            goto start;
-        }
-        //Console.WriteLine("MyBot plays: " + move_result);
-        return move_result;
     }
 }

@@ -16,11 +16,12 @@ namespace ChessChallenge.Example
             board.UndoMove(move);
             return isMate;
         }
+
         Move return_nice_pos(Board board, Move[] all_moves, ref int score)
         {
             Random rng = new();
             Move move_result = all_moves[rng.Next(all_moves.Length)];
-    
+
             foreach (Move move in all_moves)
             {
                 if (MoveIsCheckmate(board, move))
@@ -38,7 +39,7 @@ namespace ChessChallenge.Example
             }
             return move_result;
         }
-    
+
         /*
         ** essentially, we take the best move we have currently found,
         ** and we check that the next opponent move will not absolutely
@@ -69,7 +70,7 @@ namespace ChessChallenge.Example
             //if bad is true we have to add bad_move to a list of illegal moves
             return bad;
         }
-    
+
         // Piece values: null, pawn, knight, bishop, rook, queen, king
         int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
         public Move Think(Board board, Timer timer)
@@ -79,22 +80,22 @@ namespace ChessChallenge.Example
             Random rng = new();
             Move move_result = all_moves[rng.Next(all_moves.Length)];
             int score = 0;
-    
+
             start:
             //score = 0;
             /*if i put score = 0 here, my bot suddenly becomes much worse.
             why?*/
             // remove bad moves
             Move[] legal_moves = all_moves.Where(m => !bad_moves.Contains(m)).ToArray();
-    
+
             // If all moves are bad, return a default one
             if (legal_moves.Length == 0)
             {
                 return move_result;
             }
-    
+
             move_result = return_nice_pos(board, legal_moves, ref score);
-    
+
             if (foot_is_shot(board, score, move_result))
             {
                 bad_moves.Add(move_result);
