@@ -5,140 +5,162 @@ using System.Linq;
 
 public class MyBot : IChessBot
 {
-    bool move_is_checkmate(Board board, Move move)
-    {
-        board.MakeMove(move);
-        bool is_mate = board.IsInCheckmate();
-        board.UndoMove(move);
-        return is_mate;
-    }
-
-    /*
-    ** when bot is smarter we'll remove this cus it won't need it
-    */
-    bool move_is_draw(Board board, Move move)
-    {
-        board.MakeMove(move);
-        bool is_draw = board.IsRepeatedPosition();
-        board.UndoMove(move);
-        return is_draw;
-    }
-
-    Move return_nice_pos(Board board, Move[] all_moves, ref int score)
-    {
-        Random rng = new();
-        Move move_result = all_moves[rng.Next(all_moves.Length)];
-
-        foreach (Move move in all_moves)
-        {
-            if (move_is_checkmate(board, move))
-            {
-                move_result = move;
-                break;
-            }
-            Piece capturedPiece = board.GetPiece(move.TargetSquare);
-            int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
-            if (capturedPieceValue > score)
-            {
-                move_result = move;
-                score = capturedPieceValue;
-            }
-        }
-        return move_result;
-    }
-
-    /*
-    ** essentially, we take the best move we have currently found,
-    ** and we check that the next opponent move will not absolutely
-    ** annihilate us (as in we are shooting ourself in foot)
-    ** returns true if actually we have bad move, and false if its ok
-    */
-    bool foot_is_shot(Board board, int score, Move best_move)
-    {
-        board.MakeMove(best_move);
-        Move[] all_moves = board.GetLegalMoves();
-        bool bad = false;
-        foreach (Move move in all_moves)
-        {
-            if (move_is_checkmate(board, move) || move_is_draw(board, move))
-            {
-                bad = true;
-                break;
-            }
-            Piece capturedPiece = board.GetPiece(move.TargetSquare);
-            int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
-            if (score - capturedPieceValue < 0)
-            {
-                bad = true;
-                break;
-            }
-        }
-        board.UndoMove(best_move);
-        //if bad is true we have to add bad_move to a list of illegal moves
-        return bad;
-    }
-
-    Move return_best_pos(Board board, Move[] moves, out int bestCaptureValue)
-    {
-        // Compute from scratch each call
-        bestCaptureValue = int.MinValue;
-        Move best_move = Move.NullMove;
-        Random rng = new();
-
-        // If you want randomness among equals, you could shuffle or pick random start:
-        // But for simplicity, initialize to a random move in case no captures found.
-        if (moves.Length > 0)
-            best_move = moves[rng.Next(moves.Length)];
-
-        foreach (var move in moves)
-        {
-            if (move_is_checkmate(board, move)) {
-                best_move = move;
-                bestCaptureValue = int.MaxValue; // highest priority
-                break;
-            }
-            Piece cap = board.GetPiece(move.TargetSquare);
-            int val = pieceValues[(int)cap.PieceType];
-            if (val > bestCaptureValue)
-            {
-                bestCaptureValue = val;
-                best_move = move;
-            }
-        }
-        // If no captures found, bestCaptureValue may remain int.MinValue; you can normalize that to 0:
-        if (bestCaptureValue < 0)
-            bestCaptureValue = 0;
-        return best_move;
-    }
-
-
-    // Piece values: null, pawn, knight, bishop, rook, queen, king
+    // Piece values index: 1=pawn ... 6=king; index 0 unused.
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
+
+    bool MoveIsCheckmate(Board board, Move move)
+    {
+        board.MakeMove(move);
+        bool isMate = board.IsInCheckmate();
+        board.UndoMove(move);
+        return isMate;
+    }
+
+    bool MoveIsDraw(Board board, Move move)
+    {
+        board.MakeMove(move);
+        bool isDraw = board.IsRepeatedPosition();
+        board.UndoMove(move);
+        return isDraw;
+    }
+
+    private class MoveNode
+    {
+        public Move Move;
+        public List<MoveNode> Children = new();
+        public int Score = 0; // for leaf evaluation or propagated alpha-beta result
+        public MoveNode(Move move) => Move = move;
+    }
+
+    /*
+    ** breaks when they are black
+    */
+    int EvaluateBoard(Board board)
+    {
+        int score = 0;
+        var allPieceLists = board.GetAllPieceLists();
+        for (int i = 0; i < allPieceLists.Length; i++)
+        {
+            var pieceList = allPieceLists[i];
+            bool isWhite = i < 6;
+            int pieceType = (i % 6) + 1; // 1=pawn ... 6=king
+            int value = pieceValues[pieceType];
+            score += value * pieceList.Count * (isWhite ? 1 : -1);
+        }
+        // small king-safety: penalize if side to move is in check
+        if (board.IsInCheck())
+        {
+            // if white to move and in check, bad for white → negative; 
+            // but EvaluateBoard returns positive = good for white.
+            score += board.IsWhiteToMove ? -500 : 500;
+        }
+        return score;
+    }
+
+    // Build a full tree to given depth, storing evaluations at leaves
+    void BuildTree(Board board, MoveNode node, int depth, Timer timer)
+    {
+        if (depth == 0)
+        {
+            node.Score = EvaluateBoard(board) * (board.IsWhiteToMove ? -1 : 1);
+            return;
+        }
+        // Optional: check timer here to bail early; if time is up, you might assign a heuristic and return.
+        foreach (Move move in board.GetLegalMoves())
+        {
+            if (timer.MillisecondsElapsedThisTurn > 5000)
+                break;
+            board.MakeMove(move);
+
+            MoveNode child = new MoveNode(move);
+            node.Children.Add(child);
+            BuildTree(board, child, depth - 1, timer);
+
+            board.UndoMove(move);
+        }
+        // If no children (no legal moves), you might set node.Score here:
+        if (node.Children.Count == 0)
+        {
+            // game-over: checkmate or stalemate
+            if (board.IsInCheckmate())
+            {
+                // losing position for side to move:
+                node.Score = board.IsWhiteToMove ? int.MinValue/2 : int.MaxValue/2;
+            }
+            else
+            {
+                // stalemate or draw:
+                node.Score = 0;
+            }
+        }
+    }
+
+    // Alpha-Beta over MoveNode tree
+    int AlphaBeta(MoveNode node, int depth, int alpha, int beta, bool maximizing, Timer timer)
+    {
+        if (timer.MillisecondsElapsedThisTurn > 5000)
+        {
+            // Time’s up: return the current static score (either leaf-eval or previously propagated).
+            return node.Score;
+        }
+        if (depth == 0 || node.Children.Count == 0)
+        {
+            return node.Score;
+        }
+
+        if (maximizing)
+        {
+            int value = int.MinValue;
+            foreach (var child in node.Children)
+            {
+                int score = AlphaBeta(child, depth - 1, alpha, beta, false, timer);
+                value = Math.Max(value, score);
+                alpha = Math.Max(alpha, value);
+                if (alpha >= beta)
+                    break; // beta cutoff
+            }
+            node.Score = value;
+            return value;
+        }
+        else
+        {
+            int value = int.MaxValue;
+            foreach (var child in node.Children)
+            {
+                int score = AlphaBeta(child, depth - 1, alpha, beta, true, timer);
+                value = Math.Min(value, score);
+                beta = Math.Min(beta, value);
+                if (beta <= alpha)
+                    break; // alpha cutoff
+            }
+            node.Score = value;
+            return value;
+        }
+    }
+
     public Move Think(Board board, Timer timer)
     {
-        Move[] all_moves = board.GetLegalMoves();
-        HashSet<Move> bad_moves = new HashSet<Move>();
-        Random rng = new();
-        int bestCap;
-        Move move_result = all_moves[rng.Next(all_moves.Length)];;
+        // Choose search depth (plies)
+        int depth = 5; // adjust per performance/time
+        MoveNode root = new MoveNode(Move.NullMove);
 
-        while (true)
-        {
-            Move[] legal_moves = all_moves.Where(m => !bad_moves.Contains(m)).ToArray();
-            if (legal_moves.Length == 0)
-            {
-                // fallback: no non-bad moves remain; pick any or resign
-                // for now pick a random from all_moves or the last known move
-                return move_result != Move.NullMove ? move_result : all_moves[rng.Next(all_moves.Length)];
-            }
-            move_result = return_best_pos(board, legal_moves, out bestCap);
+        BuildTree(board, root, depth, timer);
 
-            if (foot_is_shot(board, bestCap, move_result))
-            {
-                bad_moves.Add(move_result);
-                continue; // retry with remaining moves
-            }
-            return move_result;
-        }
+        // If no legal moves at root, return NullMove
+        if (root.Children.Count == 0)
+            return Move.NullMove;
+
+        // Run alpha-beta on the built tree
+        int alpha = int.MinValue + 1;
+        int beta = int.MaxValue;
+        // Root is maximizing (we choose best)
+        AlphaBeta(root, depth, alpha, beta, true, timer);
+
+        // Pick the child with highest Score
+        MoveNode bestChild = root.Children
+            .OrderByDescending(n => n.Score)
+            .First();
+
+        return bestChild.Move;
     }
 }
