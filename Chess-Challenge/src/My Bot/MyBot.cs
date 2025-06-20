@@ -17,43 +17,49 @@ public class MyBot : IChessBot
     }
 
     /*
-    ** we are in desperate need of a func that gives a rough
-    ** estimate of if we are losing or winning
-    ** positive if winning,
-    ** negative if losing
-    */
-    int rating(bool is_white, Board board)
-    {
-        int P = board.GetPieceList(PieceType.Pawn, true).Count - board.GetPieceList(PieceType.Pawn, false).Count;
-        int N = board.GetPieceList(PieceType.Knight, true).Count - board.GetPieceList(PieceType.Knight, false).Count;
-        int B = board.GetPieceList(PieceType.Bishop, true).Count - board.GetPieceList(PieceType.Bishop, false).Count;
-        int R = board.GetPieceList(PieceType.Rook, true).Count - board.GetPieceList(PieceType.Rook, false).Count;
-        int Q = board.GetPieceList(PieceType.Queen, true).Count - board.GetPieceList(PieceType.Queen, false).Count;
-
-        //Multiply the material differences by their respective weights.
-        int result = (900 * Q) + 
-            (500 * R) + 
-            (300 * (B + N)) + 
-            (100 * P);
-
-        if(!is_white)
-        {
-            result *= -1; //Adjusting result for when playing the black pieces.
-        }
-        return result;
-    }
-
-    /*
     ** when bot is smarter we'll remove this cus it won't need it
     ** that or we'll only consider it bad when we are losing
     */
     bool move_is_draw(Board board, Move move)
     {
         board.MakeMove(move);
-        bool is_draw = board.IsRepeatedPosition();
+        bool is_draw = board.IsDraw();
         board.UndoMove(move);
         return is_draw;
     }
+
+    /*
+    ** we are in desperate need of a func that gives a rough
+    ** estimate of if we are losing or winning
+    ** positive if winning,
+    ** negative if losing
+    ** if you can score a draw when you are losing, then good, otherwise, bad(or is that a natural thing)
+    ** is_white is the actual real player, board.IsWhiteToMove is whoever is playing now, on the minmax algo
+    */
+    int rating(bool is_white, Board board)
+{
+    int P = board.GetPieceList(PieceType.Pawn, is_white).Count - board.GetPieceList(PieceType.Pawn, !is_white).Count;
+    int N = board.GetPieceList(PieceType.Knight, is_white).Count - board.GetPieceList(PieceType.Knight, !is_white).Count;
+    int B = board.GetPieceList(PieceType.Bishop, is_white).Count - board.GetPieceList(PieceType.Bishop, !is_white).Count;
+    int R = board.GetPieceList(PieceType.Rook, is_white).Count - board.GetPieceList(PieceType.Rook, !is_white).Count;
+    int Q = board.GetPieceList(PieceType.Queen, is_white).Count - board.GetPieceList(PieceType.Queen, !is_white).Count;
+
+    int result = (900 * Q) + (500 * R) + (300 * (B + N)) + (100 * P);
+
+    if (board.IsInCheckmate())
+    {
+        result = board.IsWhiteToMove == is_white ? -10000 : 10000;
+        return result;
+    }
+    if (board.IsDraw())
+    {
+        if (result < -100)
+            result = 0;
+        else
+            result = board.IsWhiteToMove == is_white ? -100 : 0;
+    }
+    return result;
+}
 
     /*
     ** essentially, we take the best move we have currently found,
@@ -131,8 +137,7 @@ public class MyBot : IChessBot
             Move[] legal_moves = all_moves.Where(m => !bad_moves.Contains(m)).ToArray();
             if (legal_moves.Length == 0)
             {
-                // fallback: no non-bad moves remain; pick any or resign
-                // for now pick a random from all_moves or the last known move
+                // we pick a random from all_moves or the last known move
                 return move_result != Move.NullMove ? move_result : all_moves[rng.Next(all_moves.Length)];
             }
             move_result = return_best_pos(board, legal_moves, out bestCap);
