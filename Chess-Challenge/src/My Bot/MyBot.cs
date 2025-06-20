@@ -43,9 +43,14 @@ public class MyBot : IChessBot
         int Q = board.GetPieceList(PieceType.Queen, is_white).Count - board.GetPieceList(PieceType.Queen, !is_white).Count;
         int result = (900 * Q) + (500 * R) + (300 * (B + N)) + (100 * P);
 
-        if (board.IsInCheckmate())
+        if (board.IsInCheckmate()) //losing bad winning good
         {
             result = board.IsWhiteToMove == is_white ? -10000 : 10000;
+            return result;
+        }
+        if (board.IsInCheck()) //checking opponent good being checked bad (usually)
+        {
+            result += board.IsWhiteToMove == is_white ? -50 : 50;
             return result;
         }
         if (board.IsDraw())
