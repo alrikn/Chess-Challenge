@@ -24,7 +24,7 @@ namespace ChessChallenge.Example
         bool move_is_draw(Board board, Move move)
         {
             board.MakeMove(move);
-            bool is_draw = board.IsRepeatedPosition();
+            bool is_draw = board.IsDraw();
             board.UndoMove(move);
             return is_draw;
         }

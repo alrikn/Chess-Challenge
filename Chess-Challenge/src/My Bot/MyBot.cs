@@ -29,37 +29,105 @@ public class MyBot : IChessBot
     }
 
     /*
-    ** we are in desperate need of a func that gives a rough
-    ** estimate of if we are losing or winning
     ** positive if winning,
     ** negative if losing
     ** if you can score a draw when you are losing, then good, otherwise, bad(or is that a natural thing)
     ** is_white is the actual real player, board.IsWhiteToMove is whoever is playing now, on the minmax algo
     */
     int rating(bool is_white, Board board)
-{
-    int P = board.GetPieceList(PieceType.Pawn, is_white).Count - board.GetPieceList(PieceType.Pawn, !is_white).Count;
-    int N = board.GetPieceList(PieceType.Knight, is_white).Count - board.GetPieceList(PieceType.Knight, !is_white).Count;
-    int B = board.GetPieceList(PieceType.Bishop, is_white).Count - board.GetPieceList(PieceType.Bishop, !is_white).Count;
-    int R = board.GetPieceList(PieceType.Rook, is_white).Count - board.GetPieceList(PieceType.Rook, !is_white).Count;
-    int Q = board.GetPieceList(PieceType.Queen, is_white).Count - board.GetPieceList(PieceType.Queen, !is_white).Count;
-
-    int result = (900 * Q) + (500 * R) + (300 * (B + N)) + (100 * P);
-
-    if (board.IsInCheckmate())
     {
-        result = board.IsWhiteToMove == is_white ? -10000 : 10000;
+        int P = board.GetPieceList(PieceType.Pawn, is_white).Count - board.GetPieceList(PieceType.Pawn, !is_white).Count;
+        int N = board.GetPieceList(PieceType.Knight, is_white).Count - board.GetPieceList(PieceType.Knight, !is_white).Count;
+        int B = board.GetPieceList(PieceType.Bishop, is_white).Count - board.GetPieceList(PieceType.Bishop, !is_white).Count;
+        int R = board.GetPieceList(PieceType.Rook, is_white).Count - board.GetPieceList(PieceType.Rook, !is_white).Count;
+        int Q = board.GetPieceList(PieceType.Queen, is_white).Count - board.GetPieceList(PieceType.Queen, !is_white).Count;
+        int result = (900 * Q) + (500 * R) + (300 * (B + N)) + (100 * P);
+
+        if (board.IsInCheckmate())
+        {
+            result = board.IsWhiteToMove == is_white ? -10000 : 10000;
+            return result;
+        }
+        if (board.IsDraw())
+        {
+            if (result < -100)
+                result = 0;
+            else
+                result = board.IsWhiteToMove == is_white ? -100 : 0;
+        }
         return result;
     }
-    if (board.IsDraw())
+
+    /*
+    ** defs:
+    ** Move[] all_moves = board.GetLegalMoves(); // get all moves
+    ** board.MakeMove(move); //advances board to move
+    ** board.UndoMove(move); //resets board to the move that was (undoes board.MakeMove(move))
+    ** timer.MillisecondsElapsedThisTurn //when this reaches 2000, exit branch
+    ** 
+    */
+    Move min_max_handle(Board board, Timer timer)
     {
-        if (result < -100)
-            result = 0;
-        else
-            result = board.IsWhiteToMove == is_white ? -100 : 0;
+        Move[] all_moves = board.GetLegalMoves();
+        Random rng = new();
+        Move best_move = all_moves[rng.Next(all_moves.Length)];
+        int best_score = int.MinValue;
+        bool is_white = board.IsWhiteToMove;
+
+        foreach (Move move in all_moves)
+        {
+            board.MakeMove(move);
+            int score = Minimax(board, depth: 3, isMaximizing: false, is_white: is_white, timer: timer);
+            board.UndoMove(move);
+
+            if (score > best_score)
+            {
+                best_score = score;
+                best_move = move;
+            }
+            if (timer.MillisecondsElapsedThisTurn >= 1950)
+                break;
+        }
+        return best_move;
     }
-    return result;
-}
+
+    /*
+    ** if no time or is unplayable, or at end of tree return
+    ** if our turn, we look for highest value, if opponet turn, they try to find lowest value
+    ** 
+    */
+    int Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer)
+    {
+        if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= 1950)
+        {
+            return rating(is_white, board);
+        }
+        Move[] moves = board.GetLegalMoves();
+        if (moves.Length == 0)
+        {
+            return rating(is_white, board); // stalemate or checkmate
+        }
+        int bestEval = isMaximizing ? int.MinValue : int.MaxValue;
+        foreach (Move move in moves)
+        {
+            board.MakeMove(move);
+            int eval = Minimax(board, depth - 1, !isMaximizing, is_white, timer);
+            board.UndoMove(move);
+
+            if (isMaximizing)
+            {
+                bestEval = Math.Max(bestEval, eval);
+            }
+            else
+            {
+                bestEval = Math.Min(bestEval, eval);
+            }
+            if (timer.MillisecondsElapsedThisTurn >= 1950)
+                break;
+        }
+        return bestEval;
+    }
+
 
     /*
     ** essentially, we take the best move we have currently found,
@@ -125,28 +193,6 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        Move[] all_moves = board.GetLegalMoves();
-        HashSet<Move> bad_moves = new HashSet<Move>();
-        Random rng = new();
-        int bestCap;
-        Move move_result = all_moves[rng.Next(all_moves.Length)];
-        bool is_white = board.IsWhiteToMove;
-    
-        while (true)
-        {
-            Move[] legal_moves = all_moves.Where(m => !bad_moves.Contains(m)).ToArray();
-            if (legal_moves.Length == 0)
-            {
-                // we pick a random from all_moves or the last known move
-                return move_result != Move.NullMove ? move_result : all_moves[rng.Next(all_moves.Length)];
-            }
-            move_result = return_best_pos(board, legal_moves, out bestCap);
-            if (foot_is_shot(board, bestCap, move_result))
-            {
-                bad_moves.Add(move_result);
-                continue; // retry with remaining moves
-            }
-            return move_result;
-        }
+        return min_max_handle(board, timer);
     }
 }
