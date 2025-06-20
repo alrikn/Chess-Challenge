@@ -78,11 +78,13 @@ public class MyBot : IChessBot
         Move best_move = all_moves[rng.Next(all_moves.Length)];
         int best_score = int.MinValue;
         bool is_white = board.IsWhiteToMove;
+        int alpha = int.MinValue; //best score the maximizing player is guaranteed to get so far (high is better)
+        int beta = int.MaxValue; // best score the minimizing player is guaranteed to get so far (low is better)
 
         foreach (Move move in all_moves)
         {
             board.MakeMove(move);
-            int score = Minimax(board, depth: 3, isMaximizing: false, is_white: is_white, timer: timer);
+            int score = Minimax(board, depth: 3, isMaximizing: false, is_white: is_white, timer: timer, alpha, beta);
             board.UndoMove(move);
 
             if (score > best_score)
@@ -99,9 +101,53 @@ public class MyBot : IChessBot
     /*
     ** if no time or is unplayable, or at end of tree return
     ** if our turn, we look for highest value, if opponet turn, they try to find lowest value
+    ** alpha beta pruning explenation:
+    ** Max
+    ** ├── A → Min
+    ** │   ├── A1 → 50
+    ** │   └── A2 → 60  ← Best so far: Max sees 60
+    ** └── B → Min
+    **     ├── B1 → 20
+    **     └── B2 → ?
+    ** We are at the root (Max’s turn).
     ** 
+    ** We first explore branch A, and we find:
+    ** 
+    **     A1: Max gets 50
+    ** 
+    **     A2: Max gets 60
+    ** 
+    ** So, alpha = 60 (best score Max has seen so far)
+    ** Now we start exploring branch B.
+    ** 
+    ** Let’s say it's Min's turn under B. Min is trying to minimize Max’s score. So Min sees:
+    ** 
+    **     B1: Max would get 20 → Min thinks, “this is good for me”
+    ** 
+    **     So far, beta = 20 (best Min has seen for itself in branch B)
+    ** 
+    ** Now we check:
+    ** 
+    ** if (beta <= alpha) → if (20 <= 60) → TRUE
+    ** 
+    ** So we prune B2.
+    ** explanation:
+    ** 
+    **    Even if B2 gives Max a huge score, Min won’t allow it.
+    **
+    **    Because Min is in control under B.
+    **
+    **    And Min has already seen B1, which limits Max to 20.
+    **
+    **    So Min would just play B1 and never allow B2 to happen.
+    **
+    **    Therefore, Max cannot do better than 20 in branch B.
+    **
+    **    But Max already knows that branch A gives 60.
+    **
+    **    So Max will never choose branch B, and we don’t need to evaluate B2.
     */
-    int Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer)
+    int Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer, int alpha, int beta)
     {
         if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= 1950)
         {
@@ -110,25 +156,31 @@ public class MyBot : IChessBot
         Move[] moves = board.GetLegalMoves();
         if (moves.Length == 0)
         {
-            return rating(is_white, board); // stalemate or checkmate
+            return rating(is_white, board);
         }
         int bestEval = isMaximizing ? int.MinValue : int.MaxValue;
         foreach (Move move in moves)
         {
             board.MakeMove(move);
-            int eval = Minimax(board, depth - 1, !isMaximizing, is_white, timer);
+            int eval = Minimax(board, depth - 1, !isMaximizing, is_white, timer, alpha, beta);
             board.UndoMove(move);
 
             if (isMaximizing)
             {
                 bestEval = Math.Max(bestEval, eval);
+                if (bestEval > alpha)
+                    alpha = bestEval;
             }
             else
             {
                 bestEval = Math.Min(bestEval, eval);
+                if (bestEval < beta)
+                    beta = bestEval;
             }
-            if (timer.MillisecondsElapsedThisTurn >= 1950)
+            if (beta <= alpha)
                 break;
+            if (timer.MillisecondsElapsedThisTurn >= 1950)
+                    break;
         }
         return bestEval;
     }
