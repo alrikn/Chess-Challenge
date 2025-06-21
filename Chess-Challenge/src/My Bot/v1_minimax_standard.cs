@@ -1,10 +1,10 @@
-﻿using ChessChallenge.API;
+using ChessChallenge.API;
 using Microsoft.CodeAnalysis.Emit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class MyBot : IChessBot
+public class V1 : IChessBot
 {
     // Piece values: null, pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
@@ -15,7 +15,7 @@ public class MyBot : IChessBot
     ** if you can score a draw when you are losing, then good, otherwise, bad(or is that a natural thing)
     ** is_white is the actual real player, board.IsWhiteToMove is whoever is playing now, on the minmax algo
     */
-    int rating(bool is_white, Board board, int depth)
+    int rating(bool is_white, Board board)
     {
         int P = board.GetPieceList(PieceType.Pawn, is_white).Count - board.GetPieceList(PieceType.Pawn, !is_white).Count;
         int N = board.GetPieceList(PieceType.Knight, is_white).Count - board.GetPieceList(PieceType.Knight, !is_white).Count;
@@ -31,15 +31,14 @@ public class MyBot : IChessBot
             //    Console.WriteLine("found possible checkmate win");
             //if (!is_player_turn)
             //    Console.WriteLine("found possible checkmate loss");
-            int mateScore = is_player_turn ? int.MinValue + depth : int.MaxValue - depth;
-            return mateScore;
+            return is_player_turn ? int.MinValue : int.MaxValue;
             // if its your turn:(board.IsWhiteToMove == is_white) and the board is in checmate, that means that you are in checkmate, and so very bad
             //if its not your turn, it means the enemy is in checmate and so very good.
         }
         if (board.IsInCheck()) //checking opponent good being checked bad (usually)
         {
-            //if (!is_player_turn)
-            //    Console.WriteLine("possible check to be made to evil botS");
+            if (!is_player_turn)
+                Console.WriteLine("possible check to be made to evil botS");
             if (is_player_turn)
                 result += -50;
             else
@@ -58,52 +57,35 @@ public class MyBot : IChessBot
     ** board.MakeMove(move); //advances board to move
     ** board.UndoMove(move); //resets board to the move that was (undoes board.MakeMove(move))
     ** timer.MillisecondsElapsedThisTurn //when this reaches 2000, exit branch
-    ** timer.MillisecondsRemaining //s
+    ** 
     */
-    Move iterative_deepening(Board board, Timer timer)
+    Move min_max_handle(Board board, Timer timer)
     {
         Move[] all_moves = board.GetLegalMoves();
         Random rng = new();
         Move best_move = all_moves[rng.Next(all_moves.Length)];
-        bool is_white = board.IsWhiteToMove;
-        int time_limit = timer.MillisecondsRemaining / 80;
-
-        int depth = 1;
-        int num_of_update = 0;
         int best_score = int.MinValue;
-        while (timer.MillisecondsElapsedThisTurn < time_limit)
+        bool is_white = board.IsWhiteToMove;
+        int alpha = int.MinValue; //best score the maximizing player is guaranteed to get so far (high is better)
+        int beta = int.MaxValue; // best score the minimizing player is guaranteed to get so far (low is better)
+
+        foreach (Move move in all_moves)
         {
-            Move moveAtThisDepth = best_move;
-            best_score = int.MinValue;
+            board.MakeMove(move);
+            int score = Minimax(board, depth: calculate_best_depth(timer), isMaximizing: false, is_white: is_white, timer: timer, alpha, beta);
+            board.UndoMove(move);
 
-            foreach (Move move in board.GetLegalMoves())
+            if (score > best_score)
             {
-                board.MakeMove(move);
-                int score = Minimax(board, depth, false, is_white, timer, int.MinValue, int.MaxValue);
-                board.UndoMove(move);
-
-                if (score > best_score)
-                {
-                    best_score = score;
-                    num_of_update++;
-                    moveAtThisDepth = move;
-                }
-
-                if (timer.MillisecondsElapsedThisTurn >= time_limit)
-                    break;
+                best_score = score;
+                best_move = move;
             }
-
-            if (timer.MillisecondsElapsedThisTurn >= time_limit)
+            if (timer.MillisecondsElapsedThisTurn >= 2500)
                 break;
-
-            best_move = moveAtThisDepth;
-            depth++; // Try deeper
         }
-        Console.WriteLine($"num of updates: {num_of_update}");
-        Console.WriteLine($"Final depth reached: {depth - 1}, score = "+ best_score + " time_limit = " + time_limit);
+        Console.WriteLine("Best move chosen: " + best_move + ", Score: " + best_score);
         return best_move;
     }
-
 
     /*
     **timer.MillisecondsElapsedThisTurn;
@@ -173,12 +155,12 @@ public class MyBot : IChessBot
     {
         if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= 2500)
         {
-            return rating(is_white, board, depth);
+            return rating(is_white, board);
         }
         Move[] moves = board.GetLegalMoves();
         if (moves.Length == 0)
         {
-            return rating(is_white, board, depth);
+            return rating(is_white, board);
         }
         int bestEval = isMaximizing ? int.MinValue : int.MaxValue;
         foreach (Move move in moves)
@@ -208,6 +190,6 @@ public class MyBot : IChessBot
     }
     public Move Think(Board board, Timer timer)
     {
-        return iterative_deepening(board, timer);
+        return min_max_handle(board, timer);
     }
 }
