@@ -8,26 +8,6 @@ public class MyBot : IChessBot
     // Piece values: null, pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
 
-    bool move_is_checkmate(Board board, Move move)
-    {
-        board.MakeMove(move);
-        bool is_mate = board.IsInCheckmate();
-        board.UndoMove(move);
-        return is_mate;
-    }
-
-    /*
-    ** when bot is smarter we'll remove this cus it won't need it
-    ** that or we'll only consider it bad when we are losing
-    */
-    bool move_is_draw(Board board, Move move)
-    {
-        board.MakeMove(move);
-        bool is_draw = board.IsDraw();
-        board.UndoMove(move);
-        return is_draw;
-    }
-
     /*
     ** positive if winning,
     ** negative if losing
@@ -42,23 +22,21 @@ public class MyBot : IChessBot
         int R = board.GetPieceList(PieceType.Rook, is_white).Count - board.GetPieceList(PieceType.Rook, !is_white).Count;
         int Q = board.GetPieceList(PieceType.Queen, is_white).Count - board.GetPieceList(PieceType.Queen, !is_white).Count;
         int result = (900 * Q) + (500 * R) + (300 * (B + N)) + (100 * P);
+        bool is_player_turn = board.IsWhiteToMove == is_white;
 
         if (board.IsInCheckmate()) //losing bad winning good
         {
-            result = board.IsWhiteToMove == is_white ? -10000 : 10000;
-            return result;
+            return is_player_turn ? int.MinValue : int.MaxValue;
+            // if its your turn:(board.IsWhiteToMove == is_white) and the board is in checmate, that means that you are in checkmate, and so very bad
+            //if its not your turn, it means the enemy is in checmate and so very good.
         }
         if (board.IsInCheck()) //checking opponent good being checked bad (usually)
         {
-            result += board.IsWhiteToMove == is_white ? -50 : 50;
-            return result;
+            result += is_player_turn ? -50 : 50;
         }
         if (board.IsDraw())
         {
-            if (result < -100)
-                result = 0;
-            else
-                result = board.IsWhiteToMove == is_white ? -100 : 0;
+            return 20;
         }
         return result;
     }
@@ -84,7 +62,7 @@ public class MyBot : IChessBot
         foreach (Move move in all_moves)
         {
             board.MakeMove(move);
-            int score = Minimax(board, depth: 3, isMaximizing: false, is_white: is_white, timer: timer, alpha, beta);
+            int score = Minimax(board, depth: calculate_best_depth(timer), isMaximizing: false, is_white: is_white, timer: timer, alpha, beta);
             board.UndoMove(move);
 
             if (score > best_score)
@@ -92,10 +70,25 @@ public class MyBot : IChessBot
                 best_score = score;
                 best_move = move;
             }
-            if (timer.MillisecondsElapsedThisTurn >= 1950)
+            if (timer.MillisecondsElapsedThisTurn >= 2500)
                 break;
         }
         return best_move;
+    }
+
+    /*
+    **timer.MillisecondsElapsedThisTurn;
+    **timer.MillisecondsRemaining;
+    **each player has 60 seconds long. should return somehwere between 4 and 2 depending on how much time is left.
+    **2 only is under 7 seconds
+    */
+    int calculate_best_depth(Timer timer)
+    {
+        int timeLeft = timer.MillisecondsRemaining;
+
+        if (timeLeft < 5000) // under 5 seconds: panic mode
+            return 2;
+        return 3;
     }
 
     /*
@@ -149,7 +142,7 @@ public class MyBot : IChessBot
     */
     int Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer, int alpha, int beta)
     {
-        if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= 1950)
+        if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= 2500)
         {
             return rating(is_white, board);
         }
@@ -179,75 +172,11 @@ public class MyBot : IChessBot
             }
             if (beta <= alpha)
                 break;
-            if (timer.MillisecondsElapsedThisTurn >= 1950)
+            if (timer.MillisecondsElapsedThisTurn >= 2500)
                     break;
         }
         return bestEval;
     }
-
-
-    /*
-    ** essentially, we take the best move we have currently found,
-    ** and we check that the next opponent move will not absolutely
-    ** annihilate us (as in we are shooting ourself in foot)
-    ** returns true if actually we have bad move, and false if its ok
-    */
-    bool foot_is_shot(Board board, int score, Move best_move)
-    {
-        board.MakeMove(best_move);
-        Move[] all_moves = board.GetLegalMoves();
-        bool bad = false;
-        foreach (Move move in all_moves)
-        {
-            if (move_is_checkmate(board, move) || move_is_draw(board, move))
-            {
-                bad = true;
-                break;
-            }
-            Piece capturedPiece = board.GetPiece(move.TargetSquare);
-            int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
-            if (score - capturedPieceValue < 0)
-            {
-                bad = true;
-                break;
-            }
-        }
-        board.UndoMove(best_move);
-        //if bad is true we have to add bad_move to a list of illegal moves
-        return bad;
-    }
-
-    Move return_best_pos(Board board, Move[] moves, out int bestCaptureValue)
-    {
-        // Compute from scratch each call
-        bestCaptureValue = int.MinValue;
-        Move best_move = Move.NullMove;
-        Random rng = new();
-        // But for simplicity, initialize to a random move in case no captures found.
-        if (moves.Length > 0)
-            best_move = moves[rng.Next(moves.Length)];
-        foreach (var move in moves)
-        {
-            if (move_is_checkmate(board, move))
-            {
-                best_move = move;
-                bestCaptureValue = int.MaxValue; // highest priority
-                break;
-            }
-            Piece cap = board.GetPiece(move.TargetSquare);
-            int val = pieceValues[(int)cap.PieceType];
-            if (val > bestCaptureValue)
-            {
-                bestCaptureValue = val;
-                best_move = move;
-            }
-        }
-        // If no captures found, bestCaptureValue may remain int.MinValue; you can normalize that to 0:
-        if (bestCaptureValue < 0)
-            bestCaptureValue = 0;
-        return best_move;
-    }
-
     public Move Think(Board board, Timer timer)
     {
         return min_max_handle(board, timer);
