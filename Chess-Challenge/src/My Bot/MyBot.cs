@@ -1,4 +1,5 @@
 ﻿using ChessChallenge.API;
+using Microsoft.CodeAnalysis.Emit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,17 +27,26 @@ public class MyBot : IChessBot
 
         if (board.IsInCheckmate()) //losing bad winning good
         {
+            //if (is_player_turn)
+            //    Console.WriteLine("found possible checkmate win");
+            //if (!is_player_turn)
+            //    Console.WriteLine("found possible checkmate loss");
             return is_player_turn ? int.MinValue : int.MaxValue;
             // if its your turn:(board.IsWhiteToMove == is_white) and the board is in checmate, that means that you are in checkmate, and so very bad
             //if its not your turn, it means the enemy is in checmate and so very good.
         }
         if (board.IsInCheck()) //checking opponent good being checked bad (usually)
         {
-            result += is_player_turn ? -50 : 50;
+            if (!is_player_turn)
+                Console.WriteLine("possible check to be made to evil botS");
+            if (is_player_turn)
+                result += -50;
+            else
+                result += 50;
         }
         if (board.IsDraw())
         {
-            return 20;
+            return -110; //if down more tan one pawn
         }
         return result;
     }
@@ -73,6 +83,7 @@ public class MyBot : IChessBot
             if (timer.MillisecondsElapsedThisTurn >= 2500)
                 break;
         }
+        Console.WriteLine("Best move chosen: " + best_move + ", Score: " + best_score);
         return best_move;
     }
 
