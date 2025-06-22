@@ -1,8 +1,5 @@
 ﻿using ChessChallenge.API;
-using Microsoft.CodeAnalysis.Emit;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 public class MyBot : IChessBot
 {
@@ -15,24 +12,29 @@ public class MyBot : IChessBot
     ** if you can score a draw when you are losing, then good, otherwise, bad(or is that a natural thing)
     ** is_white is the actual real player, board.IsWhiteToMove is whoever is playing now, on the minmax algo
     */
-    int rating(bool is_white, Board board, int depth)
+    long rating(bool is_white, Board board)
     {
         int P = board.GetPieceList(PieceType.Pawn, is_white).Count - board.GetPieceList(PieceType.Pawn, !is_white).Count;
         int N = board.GetPieceList(PieceType.Knight, is_white).Count - board.GetPieceList(PieceType.Knight, !is_white).Count;
         int B = board.GetPieceList(PieceType.Bishop, is_white).Count - board.GetPieceList(PieceType.Bishop, !is_white).Count;
         int R = board.GetPieceList(PieceType.Rook, is_white).Count - board.GetPieceList(PieceType.Rook, !is_white).Count;
         int Q = board.GetPieceList(PieceType.Queen, is_white).Count - board.GetPieceList(PieceType.Queen, !is_white).Count;
-        int result = (900 * Q) + (500 * R) + (300 * (B + N)) + (100 * P);
+        long result = (900 * Q) + (500 * R) + (300 * (B + N)) + (100 * P);
         bool is_player_turn = board.IsWhiteToMove == is_white;
+        Span<Move> moveSpan = stackalloc Move[254];
+        board.GetLegalMovesNonAlloc(ref moveSpan);
+        int mobilityBonus = (board.IsWhiteToMove == is_white) ? moveSpan.Length : -moveSpan.Length;
+        mobilityBonus = mobilityBonus / 2;
+        result += mobilityBonus;
+        //get num of possible moves and reward that 1 move = + 1 point (not just capture)
+        int pawnScore = 0;
+        foreach (var p in board.GetPieceList(PieceType.Pawn, is_white))
+            pawnScore += (is_white ? p.Square.Rank : 7 - p.Square.Rank) * 5;
+        result += pawnScore / 2; //pawn 
 
         if (board.IsInCheckmate()) //losing bad winning good
         {
-            //if (is_player_turn)
-            //    Console.WriteLine("found possible checkmate win");
-            //if (!is_player_turn)
-            //    Console.WriteLine("found possible checkmate loss");
-            int mateScore = is_player_turn ? int.MinValue + depth : int.MaxValue - depth;
-            return mateScore;
+            return is_player_turn ? int.MinValue : int.MaxValue;
             // if its your turn:(board.IsWhiteToMove == is_white) and the board is in checmate, that means that you are in checkmate, and so very bad
             //if its not your turn, it means the enemy is in checmate and so very good.
         }
@@ -45,6 +47,8 @@ public class MyBot : IChessBot
             else
                 result += 50;
         }
+        //if (board.HasKingsideCastleRight(is_white) || board.HasQueensideCastleRight(is_white))
+        //    result += 20;
         if (board.IsDraw())
         {
             return -110; //if down more tan one pawn
@@ -70,16 +74,18 @@ public class MyBot : IChessBot
 
         int depth = 1;
         int num_of_update = 0;
-        int best_score = int.MinValue;
+        long best_score = int.MinValue;
         while (timer.MillisecondsElapsedThisTurn < time_limit)
         {
             Move moveAtThisDepth = best_move;
             best_score = int.MinValue;
+            num_of_update = 0;
+            Move[] sub_moves = board.GetLegalMoves();
 
-            foreach (Move move in board.GetLegalMoves())
+            foreach (Move move in sub_moves)
             {
                 board.MakeMove(move);
-                int score = Minimax(board, depth, false, is_white, timer, int.MinValue, int.MaxValue);
+                long score = Minimax(board, depth, false, is_white, timer, int.MinValue, int.MaxValue, time_limit);
                 board.UndoMove(move);
 
                 if (score > best_score)
@@ -88,9 +94,13 @@ public class MyBot : IChessBot
                     num_of_update++;
                     moveAtThisDepth = move;
                 }
-
                 if (timer.MillisecondsElapsedThisTurn >= time_limit)
                     break;
+            }
+            if (best_score == int.MaxValue)
+            {
+                Console.WriteLine($"mate in {depth} found");
+                return moveAtThisDepth;
             }
 
             if (timer.MillisecondsElapsedThisTurn >= time_limit)
@@ -99,8 +109,7 @@ public class MyBot : IChessBot
             best_move = moveAtThisDepth;
             depth++; // Try deeper
         }
-        Console.WriteLine($"num of updates: {num_of_update}");
-        Console.WriteLine($"Final depth reached: {depth - 1}, score = "+ best_score + " time_limit = " + time_limit);
+        Console.WriteLine($"Final depth reached: {depth - 1}; num of updates: {num_of_update}; score = "+ best_score + "; time_limit = " + time_limit);
         return best_move;
     }
 
@@ -169,22 +178,32 @@ public class MyBot : IChessBot
     **
     **    So Max will never choose branch B, and we don’t need to evaluate B2.
     */
-    int Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer, int alpha, int beta)
+    long Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer, long alpha, long beta, int time_limit)
     {
-        if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= 2500)
+        if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= time_limit)
         {
-            return rating(is_white, board, depth);
+            return rating(is_white, board);
         }
-        Move[] moves = board.GetLegalMoves();
-        if (moves.Length == 0)
+        Move[] all_moves = board.GetLegalMoves();
+        if (all_moves.Length == 0)
         {
-            return rating(is_white, board, depth);
+            return rating(is_white, board);
         }
-        int bestEval = isMaximizing ? int.MinValue : int.MaxValue;
-        foreach (Move move in moves)
+        Array.Sort(all_moves, (a, b) =>
+        {
+            PieceType aType = board.GetPiece(a.StartSquare).PieceType;
+            PieceType bType = board.GetPiece(b.StartSquare).PieceType;
+
+            // King moves should go last
+            if (aType == PieceType.King && bType != PieceType.King) return 1;
+            if (aType != PieceType.King && bType == PieceType.King) return -1;
+            return 0;
+        });
+        long bestEval = isMaximizing ? int.MinValue : int.MaxValue;
+        foreach (Move move in all_moves)
         {
             board.MakeMove(move);
-            int eval = Minimax(board, depth - 1, !isMaximizing, is_white, timer, alpha, beta);
+            long eval = Minimax(board, depth - 1, !isMaximizing, is_white, timer, alpha, beta, time_limit);
             board.UndoMove(move);
 
             if (isMaximizing)
@@ -201,7 +220,7 @@ public class MyBot : IChessBot
             }
             if (beta <= alpha)
                 break;
-            if (timer.MillisecondsElapsedThisTurn >= 2500)
+            if (timer.MillisecondsElapsedThisTurn >= time_limit)
                     break;
         }
         return bestEval;
