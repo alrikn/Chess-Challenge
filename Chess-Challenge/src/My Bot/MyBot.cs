@@ -6,6 +6,18 @@ public class MyBot : IChessBot
     // Piece values: null, pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
 
+    int Value(PieceType type) => type switch
+    {
+        PieceType.Pawn => 100,
+        PieceType.Knight => 300,
+        PieceType.Bishop => 300,
+        PieceType.Rook => 500,
+        PieceType.Queen => 900,
+        PieceType.King => 10000,
+        _ => 0
+    };
+
+
     /*
     ** positive if winning,
     ** negative if losing
@@ -109,7 +121,7 @@ public class MyBot : IChessBot
             best_move = moveAtThisDepth;
             depth++; // Try deeper
         }
-        Console.WriteLine($"Final depth reached: {depth - 1}; num of updates: {num_of_update}; score = "+ best_score + "; time_limit = " + time_limit);
+        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = "+ best_score + "; time_limit = " + time_limit);
         return best_move;
     }
 
@@ -189,16 +201,17 @@ public class MyBot : IChessBot
         {
             return rating(is_white, board);
         }
-        Array.Sort(all_moves, (a, b) =>
-        {
-            PieceType aType = board.GetPiece(a.StartSquare).PieceType;
-            PieceType bType = board.GetPiece(b.StartSquare).PieceType;
-
-            // King moves should go last
-            if (aType == PieceType.King && bType != PieceType.King) return 1;
-            if (aType != PieceType.King && bType == PieceType.King) return -1;
-            return 0;
+        Array.Sort(all_moves, (a, b) => { //move ordering makes it fast as fuck
+            int Score(Move move) {
+                var victim = board.GetPiece(move.TargetSquare);
+                var attacker = board.GetPiece(move.StartSquare);
+                if (victim.IsNull) return 0;
+                return Value(victim.PieceType) * 10 - Value(attacker.PieceType);
+            }
+            return Score(b).CompareTo(Score(a));
         });
+
+
         long bestEval = isMaximizing ? int.MinValue : int.MaxValue;
         foreach (Move move in all_moves)
         {
