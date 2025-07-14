@@ -82,7 +82,7 @@ public class MyBot : IChessBot
         Random rng = new();
         Move best_move = all_moves[rng.Next(all_moves.Length)];
         bool is_white = board.IsWhiteToMove;
-        int time_limit = timer.MillisecondsRemaining / 80;
+        int time_limit = calculate_best_time(timer);
 
         int depth = 1;
         int num_of_update = 0;
@@ -132,13 +132,13 @@ public class MyBot : IChessBot
     **each player has 60 seconds long. should return somehwere between 4 and 2 depending on how much time is left.
     **2 only is under 7 seconds
     */
-    int calculate_best_depth(Timer timer)
+    int calculate_best_time(Timer timer)
     {
         int timeLeft = timer.MillisecondsRemaining;
 
-        if (timeLeft < 5000) // under 5 seconds: panic mode
-            return 2;
-        return 3;
+        if (timeLeft < 20000) //if under 20s panic
+            return timeleft / 30;
+        return (60000 / 80); //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
     }
 
     /*
