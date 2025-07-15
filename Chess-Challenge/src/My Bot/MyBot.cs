@@ -134,11 +134,12 @@ public class MyBot : IChessBot
     */
     int calculate_best_time(Timer timer)
     {
-        int timeLeft = timer.MillisecondsRemaining;
 
-        if (timeLeft < 20000) //if under 20s panic
-            return timeleft / 30;
-        return (60000 / 80); //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
+        if (timer.MillisecondsRemaining < 20000) { //if under 20s panic
+            Console.WriteLine("panic mode");
+            return timer.MillisecondsRemaining / 30;
+        }
+        return 60000 / 80; //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
     }
 
     /*
