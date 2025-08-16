@@ -17,6 +17,7 @@ public class MyBot : IChessBot
         _ => 0
     };
 
+    int number_of_evals = 0;
 
     /*
     ** positive if winning,
@@ -42,7 +43,11 @@ public class MyBot : IChessBot
         int pawnScore = 0;
         foreach (var p in board.GetPieceList(PieceType.Pawn, is_white))
             pawnScore += (is_white ? p.Square.Rank : 7 - p.Square.Rank) * 5;
-        result += pawnScore / 2; //pawn 
+        result += pawnScore / 2; //pawn
+        if (board.HasKingsideCastleRight(is_white) || board.HasQueensideCastleRight(is_white))
+        {
+            result += 20; //to make sure that the king isn't running around
+        }
 
         if (board.IsInCheckmate()) //losing bad winning good
         {
@@ -121,7 +126,7 @@ public class MyBot : IChessBot
             best_move = moveAtThisDepth;
             depth++; // Try deeper
         }
-        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = "+ best_score + "; time_limit = " + time_limit);
+        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_score}; time_limit = {time_limit}, number_of_eval = {number_of_evals}");
         return best_move;
     }
 
@@ -134,68 +139,77 @@ public class MyBot : IChessBot
     */
     int calculate_best_time(Timer timer)
     {
+        int total = timer.GameStartTimeMilliseconds;
+        int time_left = timer.MillisecondsRemaining;
 
-        if (timer.MillisecondsRemaining < 20000) { //if under 20s panic
+        float percentage = (float)time_left / total;
+        if (percentage <= 0.1) //smaller than 10 %
+        {
             Console.WriteLine("panic mode");
             return timer.MillisecondsRemaining / 30;
         }
-        return 60000 / 80; //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
+        return time_left / 80; //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
     }
+
+
+    long Quiescence(Board board, bool is_white, bool isMaximizing, long alpha, long beta)
+    {
+        long standPat = rating(is_white, board);
+        number_of_evals++;
+
+        if (isMaximizing)
+        {
+            if (standPat >= beta)
+                return beta;
+            if (standPat > alpha)
+                alpha = standPat;
+        }
+        else
+        {
+            if (standPat <= alpha)
+                return alpha;
+            if (standPat < beta)
+                beta = standPat;
+        }
+
+        Move[] moves = board.GetLegalMoves(true); // captures only
+        foreach (var move in moves)
+        {
+            board.MakeMove(move);
+            long score = Quiescence(board, is_white, !isMaximizing, alpha, beta);
+            board.UndoMove(move);
+
+            if (isMaximizing)
+            {
+                if (score > alpha)
+                    alpha = score;
+                if (alpha >= beta)
+                    break;
+            }
+            else
+            {
+                if (score < beta)
+                    beta = score;
+                if (beta <= alpha)
+                    break;
+            }
+        }
+
+        return isMaximizing ? alpha : beta;
+    }
+
 
     /*
     ** if no time or is unplayable, or at end of tree return
     ** if our turn, we look for highest value, if opponet turn, they try to find lowest value
-    ** alpha beta pruning explenation:
-    ** Max
-    ** ├── A → Min
-    ** │   ├── A1 → 50
-    ** │   └── A2 → 60  ← Best so far: Max sees 60
-    ** └── B → Min
-    **     ├── B1 → 20
-    **     └── B2 → ?
-    ** We are at the root (Max’s turn).
-    ** 
-    ** We first explore branch A, and we find:
-    ** 
-    **     A1: Max gets 50
-    ** 
-    **     A2: Max gets 60
-    ** 
-    ** So, alpha = 60 (best score Max has seen so far)
-    ** Now we start exploring branch B.
-    ** 
-    ** Let’s say it's Min's turn under B. Min is trying to minimize Max’s score. So Min sees:
-    ** 
-    **     B1: Max would get 20 → Min thinks, “this is good for me”
-    ** 
-    **     So far, beta = 20 (best Min has seen for itself in branch B)
-    ** 
-    ** Now we check:
-    ** 
-    ** if (beta <= alpha) → if (20 <= 60) → TRUE
-    ** 
-    ** So we prune B2.
-    ** explanation:
-    ** 
-    **    Even if B2 gives Max a huge score, Min won’t allow it.
-    **
-    **    Because Min is in control under B.
-    **
-    **    And Min has already seen B1, which limits Max to 20.
-    **
-    **    So Min would just play B1 and never allow B2 to happen.
-    **
-    **    Therefore, Max cannot do better than 20 in branch B.
-    **
-    **    But Max already knows that branch A gives 60.
-    **
-    **    So Max will never choose branch B, and we don’t need to evaluate B2.
     */
     long Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer, long alpha, long beta, int time_limit)
     {
         if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= time_limit)
         {
-            return rating(is_white, board);
+            if (board.IsInCheckmate() || board.IsDraw())
+                return rating(is_white, board);
+            return Quiescence(board, is_white, isMaximizing, alpha, beta);
         }
         Move[] all_moves = board.GetLegalMoves();
         if (all_moves.Length == 0)
@@ -235,7 +249,7 @@ public class MyBot : IChessBot
             if (beta <= alpha)
                 break;
             if (timer.MillisecondsElapsedThisTurn >= time_limit)
-                    break;
+                break;
         }
         return bestEval;
     }
