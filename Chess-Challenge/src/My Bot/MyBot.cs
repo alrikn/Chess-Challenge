@@ -49,7 +49,7 @@ public class MyBot : IChessBot
 
         if (board.IsInCheckmate()) //losing bad winning good
         {
-            return is_player_turn ? int.MinValue : int.MaxValue;
+            return is_player_turn ? int.MinValue : int.MaxValue; //Todo: add a depth variable to it for the min.value
             // if its your turn:(board.IsWhiteToMove == is_white) and the board is in checmate, that means that you are in checkmate, and so very bad
             //if its not your turn, it means the enemy is in checmate and so very good.
         }
@@ -76,8 +76,9 @@ public class MyBot : IChessBot
     ** Move[] all_moves = board.GetLegalMoves(); // get all moves
     ** board.MakeMove(move); //advances board to move
     ** board.UndoMove(move); //resets board to the move that was (undoes board.MakeMove(move))
-    ** timer.MillisecondsElapsedThisTurn //when this reaches 2000, exit branch
+    ** timer.MillisecondsElapsedThisTurn //when this time_limit exit branch
     ** timer.MillisecondsRemaining //s
+    ** TODO: order move 0 and/or find a way to avoid the foreach loop altogether
     */
     Move iterative_deepening(Board board, Timer timer)
     {
@@ -89,7 +90,8 @@ public class MyBot : IChessBot
 
         int depth = 1;
         int num_of_update = 0;
-        long best_score = int.MinValue;
+        long best_score = int.MinValue; //this gets updated inside the loop
+        long best_depth_score = best_score; //this gets updated when a depth has been fully done
         while (timer.MillisecondsElapsedThisTurn < time_limit)
         {
             Move moveAtThisDepth = best_move;
@@ -118,32 +120,31 @@ public class MyBot : IChessBot
                 // but it might becom e dangerous if there is very little time
                 return moveAtThisDepth;
             }
-            if (best_score == int.MinValue)
-            {
-                Console.WriteLine($"we are about to get mated in {depth}");
-                //we do detect it but we probably lose it on the next one
-                //this is probably due to to a time problem
-                //we might be finding it in depth 4, and then going to depth 5, getting halfway there
-                //befor running out of time and returning a bogus incomplete score
-                // and since we might have run out of time before reaching the mate, we print a wrong score
-                //
-                //this also explains why the move we make is still a good move
-                //because we break befor updating the move if we ran out of time
-                //
-                //
-                //TODO: fix this (make a depth_score that only gets updated if the depth n ran completely)
-                // have it print the depth score instead of the incomplete best_score
-                // that could be compromised by the time
-
-            }
-
+            //if (best_score == int.MinValue)
+            //{
+            //    Console.WriteLine($"we are about to get mated in {depth}");
+            //    //we do detect it but we probably lose it on the next one
+            //    //this is probably due to to a time problem
+            //    //we might be finding it in depth 4, and then going to depth 5, getting halfway there
+            //    //befor running out of time and returning a bogus incomplete score
+            //    // and since we might have run out of time before reaching the mate, we print a wrong score
+            //    //
+            //    //this also explains why the move we make is still a good move
+            //    //because we break befor updating the move if we ran out of time
+            //    //
+            //    //
+            //    //TODO: fix this (make a depth_score that only gets updated if the depth n ran completely)
+            //    // have it print the depth score instead of the incomplete best_score
+            //    // that could be compromised by the time
+            //}
             if (timer.MillisecondsElapsedThisTurn >= time_limit)
                 break;
 
             best_move = moveAtThisDepth;
+            best_depth_score = best_score;
             depth++; // Try deeper
         }
-        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_score}; time_limit = {time_limit}, number_of_eval = {number_of_evals}");
+        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}, number_of_eval = {number_of_evals}");
         return best_move;
     }
 
