@@ -45,9 +45,7 @@ public class MyBot : IChessBot
             pawnScore += (is_white ? p.Square.Rank : 7 - p.Square.Rank) * 5;
         result += pawnScore / 2; //pawn
         if (board.HasKingsideCastleRight(is_white) || board.HasQueensideCastleRight(is_white))
-        {
             result += 20; //to make sure that the king isn't running around
-        }
 
         if (board.IsInCheckmate()) //losing bad winning good
         {
@@ -116,8 +114,27 @@ public class MyBot : IChessBot
             }
             if (best_score == int.MaxValue)
             {
-                Console.WriteLine($"mate in {depth} found");
+                Console.WriteLine($"mate in {depth} found"); //this works great
+                // but it might becom e dangerous if there is very little time
                 return moveAtThisDepth;
+            }
+            if (best_score == int.MinValue)
+            {
+                Console.WriteLine($"we are about to get mated in {depth}");
+                //we do detect it but we probably lose it on the next one
+                //this is probably due to to a time problem
+                //we might be finding it in depth 4, and then going to depth 5, getting halfway there
+                //befor running out of time and returning a bogus incomplete score
+                // and since we might have run out of time before reaching the mate, we print a wrong score
+                //
+                //this also explains why the move we make is still a good move
+                //because we break befor updating the move if we ran out of time
+                //
+                //
+                //TODO: fix this (make a depth_score that only gets updated if the depth n ran completely)
+                // have it print the depth score instead of the incomplete best_score
+                // that could be compromised by the time
+
             }
 
             if (timer.MillisecondsElapsedThisTurn >= time_limit)
@@ -148,7 +165,7 @@ public class MyBot : IChessBot
             Console.WriteLine("panic mode");
             return timer.MillisecondsRemaining / 30;
         }
-        return time_left / 80; //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
+        return total / 80; //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
     }
 
 
