@@ -1,11 +1,15 @@
-﻿using ChessChallenge.API;
-using System.Collections.Generic;
-
+using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
-public class MyBot : IChessBot
+namespace ChessChallenge.Example
 {
-    // Piece values: null, pawn, knight, bishop, rook, queen, king
+    // A simple bot that can spot mate in one, and always captures the most valuable piece it can.
+    // Plays randomly otherwise.
+    public class V5_bot : IChessBot
+    {
+        // Piece values: null, pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
 
     int Value(PieceType type) => type switch
@@ -258,5 +262,6 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         return iterative_deepening(board, timer);
+    }
     }
 }
