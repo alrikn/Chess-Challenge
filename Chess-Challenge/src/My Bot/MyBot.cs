@@ -19,10 +19,6 @@ public class MyBot : IChessBot
         _ => 0
     };
 
-    Dictionary<ulong, (int depth, long eval, long alpha, long beta)> transposition = new();
-
-    int number_of_evals = 0;
-
     /*
     ** positive if winning,
     ** negative if losing
@@ -129,7 +125,7 @@ public class MyBot : IChessBot
             best_depth_score = best_score;
             depth++; // Try deeper
         }
-        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}, number_of_eval = {number_of_evals}");
+        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}");
         return best_move;
     }
 
@@ -151,13 +147,12 @@ public class MyBot : IChessBot
             Console.WriteLine("panic mode");
             return timer.MillisecondsRemaining / 30;
         }
-        return total / 80; //grandmaster are never longer than 80 moves, and stupider, you are, shorter the game
+        return total / 80; //gm games are never longer than 80 moves, and the stupider you are, shorter the game
     }
 
     long Quiescence(Board board, bool is_white, bool isMaximizing, long alpha, long beta)
     {
         long standPat = rating(is_white, board);
-        number_of_evals++;
 
         if (isMaximizing)
         {
@@ -199,7 +194,6 @@ public class MyBot : IChessBot
 
         return isMaximizing ? alpha : beta;
     }
-
 
     /*
     ** if no time or is unplayable, or at end of tree return
