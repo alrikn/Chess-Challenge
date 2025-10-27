@@ -1,95 +1,28 @@
-# Chess Coding Challenge (C#)
-Welcome to the [chess coding challenge](https://youtu.be/iScy18pVR58)! This is a friendly competition in which your goal is to create a small chess bot (in C#) using the framework provided in this repository.
-Once submissions close, these bots will battle it out to discover which bot is best!
+# chess bot
+---
 
-I will then create a video exploring the implementations of the best and most unique/interesting bots.
-I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
+I really wanted to try my hand at making a bot that could play chess, as i had been playing a lot of chess and wanted to see if i could translate my mediocre chess skills to a chess bot. I am using the framework made by Sebastian Lague that he used to make a challenge some time ago. I chose this framework because i wasn’t so much interested at making a chess architecture so much as just jumping straight into programming and being able to immediately see the results of playing against that chess bot. (i truly believe that being able to see the results of your efforts is what makes SW so fun).
 
-## Submissions are now closed
-Thank you so much to everyone who participated -- in total, 636 chess bots were submitted. Also, a huge extra thanks to everyone who contributed code, reported bugs in the framework (sorry about those!), and gave their time to help others getting started with the intricacies of chess programming.
+---
 
-The results video is now out over [here](https://youtu.be/Ne40a5LkK6A).
-And the tournament data can be found [here](https://github.com/SebLague/Tiny-Chess-Bot-Challenge-Results).
+## Current bot:
 
-## Change Log
-It has been necessary to make some bug fixes to the original project, and I've also been tempted (by some great suggestions from the community) into making a few non-breaking improvements/additions to the API. I realize that changes can be frustrating during a challenge though, and so will commit to freezing the API from August 1st.
+around 1000 elo, plays very aggressively, but easily tricked (only sees 3-4 moves ahead). As soon as you play a few games against it, you can beat it consistently (its very predictable).
 
-* <b>V1.1</b> Fixed major bug affecting `board.GetPiece()` and `PieceList` functions. Added `Board.CreateBoardFromFEN()`.
-* <b>V1.11</b> UI changes: Added coordinate names to board UI and fixed human player input bug.
-* <b>V1.12</b> Small fixes to `board.IsDraw()`: Fifty move counter is now updated properly during search, and insufficient material is now detected for lone bishops on the same square colour.
-* <b>V1.13</b> Fixed issue with `board.ZobristKey` where value would sometimes be different after making and undoing a move. Added an alternative function for getting moves `board.GetLegalMovesNonAlloc()` (see docs for more info).
-* <b>V1.14</b> A handful of additions to the Board API: `board.IsInsufficientMaterial()`, `board.IsRepeatedPosition()`, `board.GameRepetitionHistory`, `board.FiftyMoveCounter`, `board.GameMoveHistory`, `board.GameStartFenString`.
-* <b>V1.15</b> Fixed incorrect `move.CapturePieceType` for en-passant moves and moves in `board.GameMoveHistory`. Added `BitboardHelper.VisualizeBitboard()` to help with debugging bitboards.
-* <b>V1.16</b> Added `timer.GameStartTimeMilliseconds`, `timer.OpponentMillisecondsRemaining`, `board.ForceSkipTurn()`.
-* <b>V1.17</b> Added `BitboardHelper.GetPieceAttacks()` and optimized `board.SquareIsAttackedByOponent()`. Writing `#DEBUG` in a comment will now exclude code in that line from counting towards the token limit (for testing only of course).
-* <b>V1.18</b> Added `timer.IncrementMilliseconds` (this will be 0 for the main tournament, but a small increment may be used in the final playoff games). Fixed a bug in the repetition handling, and optimized check/stalemate detection.
-* <b>V1.19</b> Fixed potential out of bounds exception. Fixed bug in stalemate detection.
-* <b>V1.20</b> Fixed (another) bug in the repetition detection.
+---
 
-[There will be no API changes after August 1]
+## Bot versions:
 
-## How to Participate
-* Install an IDE such as [Visual Studio](https://visualstudio.microsoft.com/downloads/).
-* Install [.NET 6.0](https://dotnet.microsoft.com/en-us/download)
-* Download this repository and open the Chess-Challenge project in your IDE.
-* Try building and running the project.
-  * If a window with a chess board appears — great!
-  * If it doesn't work, take a look at the [FAQ/troubleshooting](#faq-and-troubleshooting) section at the bottom of the page. You can also search the [issues page](https://github.com/SebLague/Chess-Challenge/issues) to see if anyone is having a similar issue. If not, post about it there with any details such as error messages, operating system etc.
-* Open the MyBot.cs file _(located in src/MyBot)_ and write some code!
-  * You might want to take a look at the [Documentation](https://seblague.github.io/chess-coding-challenge/documentation/) first, and the Rules too!
-* Build and run the program again to test your changes.
-  * For testing, you have three options in the program:
-    * You can play against the bot yourself (Human vs Bot)
-    * The bot can play a match against itself (MyBot vs MyBot)
-    * The bot can play a match against a simple example bot (MyBot vs EvilBot).<br>You could also replace the EvilBot code with your own code, to test two different versions of your bot against one another.
-* Once you're happy with your chess bot, head over to the [Submission Page](https://forms.gle/6jjj8jxNQ5Ln53ie6) to enter it into the competition.
-  * You will be able to edit your entry up until the competition closes.
+- Version 0: random move chooser that would look at all the moves (so only 1 move in advance). if it could take a piece, it would. I was quite terrible, as you could bait it to take a pawn with the queen and immediately eat the queen.
 
-## Rules
-* You may participate alone, or in a group of any size.
-* You may submit a maximum of two entries.
-  * Please only submit a second entry if it is significantly different from your first bot (not just a minor tweak).
-  * Note: you will need to log in with a second Google account if you want submit a second entry.
-* Only the following namespaces are allowed:
-    * `ChessChallenge.API`
-    * `System`
-    * `System.Numerics`
-    * `System.Collections.Generic`
-    * `System.Linq`
-      * You may not use the `AsParallel()` function
-* As implied by the allowed namespaces, you may not read data from a file or access the internet, nor may you create any new threads or tasks to run code in parallel/in the background.
-* You may not use the unsafe keyword.
-* You may not store data inside the name of a variable/function/class etc (to be extracted with `nameof()`, `GetType().ToString()`, `Environment.StackTrace` and so on). Thank you to [#12](https://github.com/SebLague/Chess-Challenge/issues/12) and [#24](https://github.com/SebLague/Chess-Challenge/issues/24).
-* If your bot makes an illegal move or runs out of time, it will lose the game.
-   * Games are played with 1 minute per side by default (this can be changed in the settings class). The final tournament time control is TBD, so your bot should not assume a particular time control, and instead respect the amount of time left on the timer (given in the Think function).
-* Your bot may not use more than 256mb of memory for creating look-up tables (such as a transposition table).
-* If you have added a constructor to MyBot (for generating look up tables, etc.) it may not take longer than 5 seconds to complete.
-* All of your code/data must be contained within the _MyBot.cs_ file.
-   * Note: you may create additional scripts for testing/training your bot, but only the _MyBot.cs_ file will be submitted, so it must be able to run without them.
-   * You may not rename the _MyBot_ struct or _Think_ function contained in the _MyBot.cs_ file.
-   * The code in MyBot.cs may not exceed the _bot brain capacity_ of 1024 (see below).
+- Version 0.5: i made it check if the move it chose could result in the opponent taking the piece. this was quite a clunky way of doing this, and couldn’t really be used for looking more than 2 moves in advance, so i abandoned this approach and later went to a classic minmax.
 
-## Bot Brain Capacity
-There is a size limit on the code you create called the _bot brain capacity_. This is measured in ‘tokens’ and may not exceed 1024. The number of tokens you have used so far is displayed on the bottom of the screen when running the program.
+- Version 1: basic minmax with non-dynamic time handling (always looked 3 moves in advance and if it ran out of time, looks 2 moves in advance). this bot was quite bad, but it could consistently beat my version 0 bots so i considered it a win. the moves were score based (the only time that a score changed was when it lost a piece or won a piece). this also meant that it would only see captures, and if it could not see any captures or losses, it would play completely randomly. For some reason it really liked moving the king around.
 
-All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
+- Version 2: same minmax logic, but i made quite a big update to how the scoring worked. mobility now became part of the score. (how many moves could it possibly see). this actually made it quite better but also very aggressive since it would now try to take moves that would give it a lot of freedom. this also meant that it would try to get the queen out as soon as possible (since the queen can move around a lot). i also made it try to push its pawns a lot more since before in the endgame it would essentially idle because it couldn’t look far enough in the future to see that if it pushed its pawn to the end it would get a queen and pretty much win. i also changed how it calculated at what depth it would stop. (before it was a set depth, 2 or 3). i had discovered a func concept, which was iterative deepening. Essentially it would check everything (by everything, i mean what minmax doesn’t prune) on depth 1, check if it had time left then go to depth 2 etc… this had a few advantages and disavantages meaning that it would dynamically handle depths in a way, but it would also redo a lot of work (because depth 3 also does the work of depth 2, depth 4 also does the work of depth 3 etc..). this did mean that it got a much more inefficent, but it was balanced by the new rating function and the fact that it used time a lot more fully.
 
-## FAQ and Troubleshooting
-* What is the format of the tournament?
-  * The format may change depending on the number of entries, but the current plan is to run two tournaments, with the first being a large Swiss tournament in which all bots are able to receive a ranking. These games will be played from the standard starting position. Some percengtage of the top bots will then be promoted to a second knock-out tournament, which will use a selection of different opening positions. The exact number of rounds/games and time-control are TBD.
-* [Unable to build/run the project from my IDE/Code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
-  * After downloading the project and installing .Net 6.0, open a terminal / command prompt window.
-  * Navigate to the folder where Chess-Challenge.csproj is located using the `cd` command.
-    * For example: `cd C:\Users\MyName\Desktop\Chess-Challenge\Chess-Challenge`
-  * Now use the command: `dotnet run`
-  * This should launch the project. If not, open an issue with any error messages and relevant info.
-*  [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
-* Issues with illegal moves or errors when making/undoing a move
-  * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exiting early from a function for example.
-* How to tell what colour MyBot is playing
-  * You can look at `board.IsWhiteToMove` when the Think function is called
-* `GetPiece()` function is giving a null piece after making a move
-  * Please make sure you are using the latest version of the project, there was a bug with this function in the original version
-* There is a community-run discord server [over here](https://github.com/SebLague/Chess-Challenge/discussions/156).
-* There is also an unofficial [live leaderboard](https://chess.stjo.dev/) created by a member of the community (source code available [here](https://github.com/StanislavNikolov/chess-league)).
-  
+- Version 3: i saw on a chess forum that the alpha beta pruning was actually a lot more efficient if you sorted the moves first, so i did that and it was indeed better i thinks thats all i did. looking at it now, i’m pretty sure i did it a bit wrong (only implemented it at root depth instead of at all depths), but it was consistently beating the previous version, so i did not care.
+
+- Version 4: i implemented quiescence and a much better time management system, that made it much more efficient (used more time and thought more). I’m pretty sure that implementing quiescence actually made it a bit worse, but it was offset by the better time management, and so it still beat the previous version, but not as overwhelmingly as the other versions would beat their own previous versions in the past.
+
+- Version 5: this version was very frustrating for me, as i at first wanted to try my hand at making a dictionary to rid myself of the inherent inefficiencies of iterative deepening. This made the bot much much worse. Essentially it actually took much more time to malloc an entry in the dictionary and look up one at every single move than actually just calculating the move with minmax. Even worse, when running at a depth of 4 or 5, the dictionary only ever matched 3000 or 4000 moves, (which is very little). Complete waste of time. in the end, i removed all of that, and just focused on bug i was noticing in the logs. Essentially, when it was winning it would indeed print out int.max, which is normal, but when losing it wouldn’t print int.min. i was worried that this was because it was failing to see it was losing, but it turned out to just be the way that i stored and updated the value that i logged so i fixed that and called it an update.
