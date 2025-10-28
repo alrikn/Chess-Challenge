@@ -77,6 +77,7 @@ public class MyBot : IChessBot
     ** timer.MillisecondsElapsedThisTurn //when this time_limit exit branch
     ** timer.MillisecondsRemaining //s
     ** TODO: order move 0 and/or find a way to avoid the foreach loop altogether
+    ** TODO: ensure the bot always does at leat always a full depth 2 even if it runs out of time
     */
     Move iterative_deepening(Board board, Timer timer)
     {
@@ -92,10 +93,23 @@ public class MyBot : IChessBot
         long best_depth_score = best_score; //this gets updated when a depth has been fully done
         while (timer.MillisecondsElapsedThisTurn < time_limit)
         {
+            //TODO: on each interative deeping, sort it so the move that turned out best last time is the first that this one takes
+            //this is cus apparently its the move that is the most likely to be the best (so pruning should be better)
+            //this can only really be done at root depth so i should do it right after board.GetLegalMoves();
             Move moveAtThisDepth = best_move;
             best_score = int.MinValue;
             num_of_update = 0;
-            Move[] sub_moves = board.GetLegalMoves();
+            Move[] sub_moves = board.GetLegalMoves(); //do i even need to regenerate this each time?
+
+            /*
+            basic move ordering at root level:
+            this ensures that our the first move will always be what we consider to be the best move,
+            to make the pruning better and everything faster
+            */
+            long best_move_index = Array.IndexOf(sub_moves, best_move);
+            sub_moves[best_move_index] = sub_moves[0];
+            sub_moves[0] = best_move;
+
 
             foreach (Move move in sub_moves) //shouldn't we be able to do minmax immediately?
             {
@@ -207,6 +221,7 @@ public class MyBot : IChessBot
                 return rating(is_white, board);
             return Quiescence(board, is_white, isMaximizing, alpha, beta);
         }
+        //TODO: if its in check, add 1 to depth
         Move[] all_moves = board.GetLegalMoves();
         if (all_moves.Length == 0)
         {
