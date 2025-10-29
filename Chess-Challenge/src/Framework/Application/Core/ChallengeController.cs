@@ -209,7 +209,7 @@ namespace ChessChallenge.Application
             return type switch
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
-                PlayerType.EvilBot => new ChessPlayer(new Bot_539(), type, GameDurationMilliseconds),
+                PlayerType.EvilBot => new ChessPlayer(new V5_bot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
         }
@@ -233,6 +233,7 @@ namespace ChessChallenge.Application
                     moveToPlay = chosenMove;
                     isWaitingToPlayMove = true;
                     playMoveTime = lastMoveMadeTime + MinMoveDelay;
+                    //Log($"playMoveTime {playMoveTime}", false, ConsoleColor.Red);
                 }
                 else
                 {
@@ -254,6 +255,11 @@ namespace ChessChallenge.Application
             if (isPlaying)
             {
                 bool animate = PlayerToMove.IsBot;
+                if (PlayerToMove.IsBot)
+                {
+                    animate = false; //animation was taking too long for no reason
+                    //when its bot vs bot, those precious split seconds of animation add up
+                }
                 lastMoveMadeTime = (float)Raylib.GetTime();
 
                 board.MakeMove(move, false);

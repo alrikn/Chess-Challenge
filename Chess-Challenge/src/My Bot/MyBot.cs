@@ -69,6 +69,15 @@ public class MyBot : IChessBot
         return result;
     }
 
+    void test_functions(Board board)
+    {
+        Move[] all_moves = board.GetLegalMoves(true); //only capture moves
+        Square king_square = board.GetKingSquare(true); //true == white
+        //int moved_peice_type = :
+        bool attack = board.SquareIsAttackedByOpponent(king_square); //could use this in the rating func to check stuff
+        
+    }
+
     /*
     ** defs:
     ** Move[] all_moves = board.GetLegalMoves(); // get all moves
