@@ -19,6 +19,36 @@ public class MyBot : IChessBot
         _ => 0
     };
 
+    Move[] make_sorted_moves(Board board)
+    {
+        Move[] allMoves = board.GetLegalMoves();
+
+        int Score(Move move)
+        {
+            // Capture bonus: MVV-LVA (Most Valuable Victim - Least Valuable Attacker)
+            var victim = board.GetPiece(move.TargetSquare);
+            var attacker = board.GetPiece(move.StartSquare);
+            int score = 0;
+
+            if (move.IsCapture)
+            {
+                score += Value(victim.PieceType) * 10 - Value(attacker.PieceType);
+            }
+
+            // Killer heuristic placeholder (you can integrate later)
+            // if (IsKiller(move)) score += 1000;
+
+            // Prioritize checks and promotions
+            //if (move.IsPromotion) score += 800;
+            if (board.SquareIsAttackedByOpponent(move.TargetSquare)) score -= 50;
+
+            return score;
+        }
+
+        Array.Sort(allMoves, (a, b) => Score(b).CompareTo(Score(a)));
+        return allMoves;
+    }
+
     /*
     ** positive if winning,
     ** negative if losing
@@ -240,20 +270,20 @@ public class MyBot : IChessBot
             return Quiescence(board, is_white, isMaximizing, alpha, beta);
         }
         //TODO: if its in check, add 1 to depth
-        Move[] all_moves = board.GetLegalMoves();
+        Move[] all_moves = make_sorted_moves(board);
         if (all_moves.Length == 0)
         {
             return rating(is_white, board);
         }
-        Array.Sort(all_moves, (a, b) => { //move ordering makes it fast as fuck
-            int Score(Move move) {
-                var victim = board.GetPiece(move.TargetSquare);
-                var attacker = board.GetPiece(move.StartSquare);
-                if (victim.IsNull) return 0;
-                return Value(victim.PieceType) * 10 - Value(attacker.PieceType);
-            }
-            return Score(b).CompareTo(Score(a));
-        });
+        //Array.Sort(all_moves, (a, b) => { //move ordering makes it fast as fuck
+        //    int Score(Move move) {
+        //        var victim = board.GetPiece(move.TargetSquare);
+        //        var attacker = board.GetPiece(move.StartSquare);
+        //        if (victim.IsNull) return 0;
+        //        return Value(victim.PieceType) * 10 - Value(attacker.PieceType);
+        //    }
+        //    return Score(b).CompareTo(Score(a));
+        //});
 
 
         long bestEval = isMaximizing ? int.MinValue : int.MaxValue;

@@ -115,7 +115,7 @@ namespace ChessChallenge.Example
                 best_move = moveAtThisDepth;
                 depth++; // Try deeper
             }
-            Console.WriteLine($"Final depth reached: {depth - 1}; num of updates: {num_of_update}; score = "+ best_score + "; time_limit = " + time_limit);
+            Console.WriteLine($"V2 - Final depth reached: {depth - 1}; num of updates: {num_of_update}; score = "+ best_score + "; time_limit = " + time_limit);
             return best_move;
         }
 

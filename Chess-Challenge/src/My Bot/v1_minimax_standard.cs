@@ -83,7 +83,7 @@ public class V1 : IChessBot
             if (timer.MillisecondsElapsedThisTurn >= 2500)
                 break;
         }
-        Console.WriteLine("Best move chosen: " + best_move + ", Score: " + best_score);
+        Console.WriteLine("V1 - Best move chosen: " + best_move + ", Score: " + best_score);
         return best_move;
     }
 

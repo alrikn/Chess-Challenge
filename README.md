@@ -1,7 +1,7 @@
 # chess bot
 ---
 
-I really wanted to try my hand at making a bot that could play chess, as i had been playing a lot of chess and wanted to see if i could translate my mediocre chess skills to a chess bot. I am using the framework made by Sebastian Lague that he used to make a challenge some time ago. I chose this framework because i wasn’t so much interested at making a chess architecture so much as just jumping straight into programming and being able to immediately see the results of playing against that chess bot. (i truly believe that being able to see the results of your efforts is what makes SW so fun). 
+I really wanted to try my hand at making a bot that could play chess, as i had been playing a lot of chess and wanted to see if i could translate my mediocre chess skills to a chess bot. I am using the framework made by Sebastian Lague that he used to make a challenge some time ago. I chose this framework because i wasn’t so much interested at making a chess architecture so much as just jumping straight into programming and being able to immediately see the results of playing against that chess bot. (i truly believe that being able to see the results of your efforts is what makes SW so fun).
 
 ---
 
