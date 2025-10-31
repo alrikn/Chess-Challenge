@@ -34,30 +34,26 @@ jobs:
         working-directory: Chess-Challenge
         run: xvfb-run -a dotnet run -c CI
 
+      - name: Upload results file
+        uses: actions/upload-artifact@v3
+        with:
+          name: bot-match-results
+          path: Chess-Challenge/bot_match_results.txt
+
   check_output:
     needs: build-and-run
     name: cat test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Find the file recursively
-        run: find . -name "bot_match_results.txt" -type f
-
-      - name: List all files recursively
-        run: find . -type f -name "*.txt" | head -20
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bot-match-results
 
       - name: a tree
         run: tree
 
-      - name: Check Chess-Challenge directory
-        run: |
-          if [ -f "Chess-Challenge/bot_match_results.txt" ]; then
-            echo "File found in Chess-Challenge/"
-            cat Chess-Challenge/bot_match_results.txt
-          else
-            echo "File not found in Chess-Challenge/"
-          fi
+      - name: Display results
+        run: cat bot_match_results.txt
 
