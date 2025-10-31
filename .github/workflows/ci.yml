@@ -32,4 +32,4 @@ jobs:
 
       - name: Run with virtual display
         working-directory: Chess-Challenge
-        run: xvfb-run -a dotnet run --configuration Release
+        run: xvfb-run -a dotnet run -c CI
