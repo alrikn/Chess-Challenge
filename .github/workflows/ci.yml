@@ -1,0 +1,133 @@
+name: ChessBot CI (testing branch)
+
+on:
+  push:
+    branches: ["*"]
+    paths-ignore:
+      - "**.md" #when its markdown, i don't really want it to rerun it
+      - "LICENSE"
+  pull_request:
+    branches: ["*"]
+  workflow_dispatch:
+
+jobs:
+  build-and-run:
+    name: Build and Run (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Restore dependencies
+        run: dotnet restore Chess-Challenge/Chess-Challenge.csproj
+
+      - name: Build
+        run: dotnet build Chess-Challenge/Chess-Challenge.csproj --configuration Release --no-restore
+
+      - name: Run with virtual display
+        working-directory: Chess-Challenge
+        run: xvfb-run -a dotnet run -c CI
+
+      - name: Upload results file
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-match-results
+          path: Chess-Challenge/bot_match_results.txt
+
+  check_output:
+    needs: build-and-run
+    name: cat test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bot-match-results
+
+      - name: a tree
+        run: tree
+
+      - name: Display results
+        run: cat bot_match_results.txt
+
+      - name: evaluate results
+        run: |
+            #!/bin/bash
+
+            # Source the results file to get the variables
+            source bot_match_results.txt
+
+            # Function to check if StupidFish is losing more than winning
+            check_stupid_fish_performance() {
+                local wins=$StupidFish_Wins
+                local losses=$StupidFish_Losses
+
+                echo "StupidFish Results: $wins wins, $losses losses"
+
+                if [ "$losses" -gt "$wins" ]; then
+                    echo "FAIL: StupidFish is losing more than winning!"
+                    return 1
+                else
+                    echo "PASS: StupidFish is not losing more than winning"
+                    return 0
+                fi
+            }
+
+            # Function to check for illegal moves
+            check_illegal_moves() {
+                local illegal_moves=$StupidFish_IllegalMoves
+
+                echo "StupidFish Illegal Moves: $illegal_moves"
+
+                if [ "$illegal_moves" -gt 0 ]; then
+                    echo "FAIL: StupidFish has $illegal_moves illegal moves!"
+                    return 1
+                else
+                    echo "PASS: StupidFish has no illegal moves"
+                    return 0
+                fi
+            }
+
+            # Main execution
+            echo "=== Checking Bot Match Results ==="
+
+            # Load the results
+            if [ ! -f "bot_match_results.txt" ]; then
+                echo "Error: bot_match_results.txt not found!"
+                exit 1
+            fi
+
+            # Run checks
+            failed=false
+
+            echo ""
+            echo "--- Performance Check ---"
+            if ! check_stupid_fish_performance; then
+                failed=true
+            fi
+
+            echo ""
+            echo "--- Illegal Moves Check ---"
+            if ! check_illegal_moves; then
+                failed=true
+            fi
+
+            echo ""
+            if [ "$failed" = true ]; then
+                echo "Some checks failed!"
+                exit 1
+            else
+                echo "All checks passed!"
+                exit 0
+            fi
+

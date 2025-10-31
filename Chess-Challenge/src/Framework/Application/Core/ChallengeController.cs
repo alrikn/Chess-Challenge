@@ -288,6 +288,21 @@ namespace ChessChallenge.Application
                 if (log)
                 {
                     Log("Game Over: " + result, false, ConsoleColor.Blue);
+
+                    // Determine which bot won
+                    string winnerName = "None (Draw)";
+
+                    if (Arbiter.IsWhiteWinsResult(result))
+                    {
+                        // White won
+                        winnerName = botAPlaysWhite ? BotStatsA.BotName : BotStatsB.BotName;
+                    }
+                    else if (Arbiter.IsBlackWinsResult(result))
+                    {
+                        // Black won
+                        winnerName = botAPlaysWhite ? BotStatsB.BotName : BotStatsA.BotName;
+                    }
+                    Log($"Winner: {winnerName}");
                 }
 
                 string pgn = PGNCreator.CreatePGN(board, result, GetPlayerName(PlayerWhite), GetPlayerName(PlayerBlack));

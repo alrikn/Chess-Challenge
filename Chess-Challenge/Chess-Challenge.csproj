@@ -57,4 +57,9 @@
     <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'=='CI'">
+    <DefineConstants>CI;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+
 </Project>

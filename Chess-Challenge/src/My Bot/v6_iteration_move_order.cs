@@ -132,7 +132,7 @@ public class V6_bot : IChessBot
             foreach (Move move in sub_moves) //shouldn't we be able to do minmax immediately?
             {
                 board.MakeMove(move);
-                long score = Minimax(board, depth -1, false, is_white, timer, int.MinValue, int.MaxValue, time_limit);
+                long score = Minimax(board, depth - 1, false, is_white, timer, int.MinValue, int.MaxValue, time_limit);
                 board.UndoMove(move);
 
                 if (score > best_score)
@@ -146,8 +146,10 @@ public class V6_bot : IChessBot
             }
             if (best_score == int.MaxValue)
             {
+#if !CI
                 Console.WriteLine($"mate in {depth} found"); //this works great
                 // but it might becom e dangerous if there is very little time
+#endif
                 return moveAtThisDepth;
             }
             if (timer.MillisecondsElapsedThisTurn >= time_limit)
@@ -157,7 +159,9 @@ public class V6_bot : IChessBot
             best_depth_score = best_score;
             depth++; // Try deeper
         }
+#if !CI
         Console.WriteLine($"V6 - depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}");
+#endif
         return best_move;
     }
 
@@ -176,7 +180,9 @@ public class V6_bot : IChessBot
         float percentage = (float)time_left / total;
         if (percentage <= 0.1) //smaller than 10 %
         {
+#if !CI
             Console.WriteLine("panic mode");
+#endif
             return timer.MillisecondsRemaining / 30;
         }
         return total / 80; //gm games are never longer than 80 moves, and the stupider you are, shorter the game

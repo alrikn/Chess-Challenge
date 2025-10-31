@@ -1,6 +1,9 @@
 ﻿using Raylib_cs;
 using System.Numerics;
+using System.IO;
+using System.Text;
 using System;
+using static ChessChallenge.Application.ConsoleHelper;
 
 namespace ChessChallenge.Application
 {
@@ -23,8 +26,34 @@ namespace ChessChallenge.Application
                 DrawStats(controller.BotStatsA);
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
-           
+#if CI
+                if (controller.CurrGameNumber > 100)
+                {
+                    var statsA = controller.BotStatsA;
+                    var statsB = controller.BotStatsB;
 
+
+                    // Parseable version for file (key=value format)
+                    StringBuilder parseable = new StringBuilder();
+                    parseable.AppendLine($"{statsA.BotName}_Wins={statsA.NumWins}");
+                    parseable.AppendLine($"{statsA.BotName}_Losses={statsA.NumLosses}");
+                    parseable.AppendLine($"{statsA.BotName}_Draws={statsA.NumDraws}");
+                    parseable.AppendLine($"{statsA.BotName}_Timeouts={statsA.NumTimeouts}");
+                    parseable.AppendLine($"{statsA.BotName}_IllegalMoves={statsA.NumIllegalMoves}");
+                    parseable.AppendLine($"{statsB.BotName}_Wins={statsB.NumWins}");
+                    parseable.AppendLine($"{statsB.BotName}_Losses={statsB.NumLosses}");
+                    parseable.AppendLine($"{statsB.BotName}_Draws={statsB.NumDraws}");
+                    parseable.AppendLine($"{statsB.BotName}_Timeouts={statsB.NumTimeouts}");
+                    parseable.AppendLine($"{statsB.BotName}_IllegalMoves={statsB.NumIllegalMoves}");
+
+                    string filePath = "bot_match_results.txt";
+                    File.WriteAllText(filePath, parseable.ToString());
+
+                    Log(parseable.ToString()); // This goes to console - human readable
+
+                    System.Environment.Exit(0);
+                }
+#endif
                 void DrawStats(ChallengeController.BotMatchStats stats)
                 {
                     DrawNextText(stats.BotName + ":", nameFontSize, Color.WHITE);
