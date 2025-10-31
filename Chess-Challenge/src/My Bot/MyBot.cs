@@ -193,7 +193,9 @@ public class MyBot : IChessBot
             best_depth_score = best_score;
             depth++; // Try deeper
         }
+#if !CI
         Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}");
+#endif
         return best_move;
     }
 

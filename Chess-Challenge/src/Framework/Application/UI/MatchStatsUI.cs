@@ -33,7 +33,7 @@ namespace ChessChallenge.Application
                     Log($"Num Draws: {controller.BotStatsA.NumDraws}");
                     Log($"Num Timeouts: {controller.BotStatsA.NumTimeouts}");
                     Log($"Num Illegal Moves: {controller.BotStatsA.NumIllegalMoves}");
-
+                    Log($"\n");
                     Log($"Bot: {controller.BotStatsB.BotName}");
                     Log($"Num Wins: {controller.BotStatsB.NumWins}");
                     Log($"Num Losses: {controller.BotStatsB.NumLosses}");

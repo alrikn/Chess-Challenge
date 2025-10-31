@@ -132,7 +132,7 @@ public class V6_bot : IChessBot
             foreach (Move move in sub_moves) //shouldn't we be able to do minmax immediately?
             {
                 board.MakeMove(move);
-                long score = Minimax(board, depth -1, false, is_white, timer, int.MinValue, int.MaxValue, time_limit);
+                long score = Minimax(board, depth - 1, false, is_white, timer, int.MinValue, int.MaxValue, time_limit);
                 board.UndoMove(move);
 
                 if (score > best_score)
@@ -157,7 +157,9 @@ public class V6_bot : IChessBot
             best_depth_score = best_score;
             depth++; // Try deeper
         }
+#if !CI
         Console.WriteLine($"V6 - depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}");
+#endif
         return best_move;
     }
 
