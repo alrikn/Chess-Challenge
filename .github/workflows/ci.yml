@@ -2,9 +2,12 @@ name: ChessBot CI (testing branch)
 
 on:
   push:
-    branches: [ testing_branch ]
+    branches: ["*"]
+    paths-ignore:
+      - "**.md" #when its markdown, i don't really want it to rerun it
+      - "LICENSE"
   pull_request:
-    branches: [ testing_branch ]
+    branches: ["*"]
   workflow_dispatch:
 
 jobs:
