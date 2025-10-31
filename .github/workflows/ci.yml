@@ -35,6 +35,7 @@ jobs:
         run: xvfb-run -a dotnet run -c CI
 
   check_output:
+    needs: build-and-run
     name: cat test
     runs-on: ubuntu-latest
 

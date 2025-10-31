@@ -1,5 +1,7 @@
 ﻿using Raylib_cs;
 using System.Numerics;
+using System.IO;
+using System.Text;
 using System;
 using static ChessChallenge.Application.ConsoleHelper;
 
