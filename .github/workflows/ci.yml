@@ -21,12 +21,15 @@ jobs:
         with:
           dotnet-version: 6.0.x
 
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
       - name: Restore dependencies
         run: dotnet restore Chess-Challenge/Chess-Challenge.csproj
 
       - name: Build
         run: dotnet build Chess-Challenge/Chess-Challenge.csproj --configuration Release --no-restore
 
-      - name: Run
+      - name: Run with virtual display
         working-directory: Chess-Challenge
-        run: dotnet run --configuration Release
+        run: xvfb-run -a dotnet run --configuration Release
