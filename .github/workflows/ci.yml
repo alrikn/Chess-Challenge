@@ -1,0 +1,31 @@
+name: ChessBot CI (testing branch)
+
+on:
+  push:
+    branches: [ testing_branch ]   # only runs when you push to this branch
+  pull_request:
+    branches: [ testing_branch ]
+  workflow_dispatch:               # allows manual runs
+
+jobs:
+  build-and-test:
+    name: Build and Test (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.411
+
+      - name: Restore dependencies
+        run: dotnet restore Chess-Challenge.sln
+
+      - name: Build
+        run: dotnet build Chess-Challenge.sln --configuration Release --no-restore
+
+      - name: Run tests (if any)
+        run: dotnet test Chess-Challenge.sln --no-build --verbosity normal
