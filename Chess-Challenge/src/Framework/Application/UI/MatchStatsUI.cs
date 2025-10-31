@@ -27,7 +27,7 @@ namespace ChessChallenge.Application
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
 #if CI
-                if (controller.CurrGameNumber > 2) //for testing purposes. when done, move back to 100
+                if (controller.CurrGameNumber > 20) //for testing purposes. when done, move back to 100
                 {
                     var statsA = controller.BotStatsA;
                     var statsB = controller.BotStatsB;
@@ -50,7 +50,7 @@ namespace ChessChallenge.Application
                     File.WriteAllText(filePath, parseable.ToString());
 
                     Log(parseable.ToString()); // This goes to console - human readable
-  
+
                     System.Environment.Exit(0);
                 }
 #endif
