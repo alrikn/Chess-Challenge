@@ -57,3 +57,74 @@ jobs:
       - name: Display results
         run: cat bot_match_results.txt
 
+      - name: evaluate results
+        run: |
+            #!/bin/bash
+
+            # Source the results file to get the variables
+            source bot_match_results.txt
+
+            # Function to check if StupidFish is losing more than winning
+            check_stupid_fish_performance() {
+                local wins=$StupidFish_Wins
+                local losses=$StupidFish_Losses
+
+                echo "StupidFish Results: $wins wins, $losses losses"
+
+                if [ "$losses" -gt "$wins" ]; then
+                    echo "FAIL: StupidFish is losing more than winning!"
+                    return 1
+                else
+                    echo "PASS: StupidFish is not losing more than winning"
+                    return 0
+                fi
+            }
+
+            # Function to check for illegal moves
+            check_illegal_moves() {
+                local illegal_moves=$StupidFish_IllegalMoves
+
+                echo "StupidFish Illegal Moves: $illegal_moves"
+
+                if [ "$illegal_moves" -gt 0 ]; then
+                    echo "FAIL: StupidFish has $illegal_moves illegal moves!"
+                    return 1
+                else
+                    echo "PASS: StupidFish has no illegal moves"
+                    return 0
+                fi
+            }
+
+            # Main execution
+            echo "=== Checking Bot Match Results ==="
+
+            # Load the results
+            if [ ! -f "bot_match_results.txt" ]; then
+                echo "Error: bot_match_results.txt not found!"
+                exit 1
+            fi
+
+            # Run checks
+            failed=false
+
+            echo ""
+            echo "--- Performance Check ---"
+            if ! check_stupid_fish_performance; then
+                failed=true
+            fi
+
+            echo ""
+            echo "--- Illegal Moves Check ---"
+            if ! check_illegal_moves; then
+                failed=true
+            fi
+
+            echo ""
+            if [ "$failed" = true ]; then
+                echo "Some checks failed!"
+                exit 1
+            else
+                echo "All checks passed!"
+                exit 0
+            fi
+

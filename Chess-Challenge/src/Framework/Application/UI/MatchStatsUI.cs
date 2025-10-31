@@ -32,26 +32,25 @@ namespace ChessChallenge.Application
                     var statsA = controller.BotStatsA;
                     var statsB = controller.BotStatsB;
 
-                    StringBuilder sb = new StringBuilder();
-                    sb.AppendLine($"Bot: {statsA.BotName}");
-                    sb.AppendLine($"Num Wins: {statsA.NumWins}");
-                    sb.AppendLine($"Num Losses: {statsA.NumLosses}");
-                    sb.AppendLine($"Num Draws: {statsA.NumDraws}");
-                    sb.AppendLine($"Num Timeouts: {statsA.NumTimeouts}");
-                    sb.AppendLine($"Num Illegal Moves: {statsA.NumIllegalMoves}");
-                    sb.AppendLine();
-                    sb.AppendLine($"Bot: {statsB.BotName}");
-                    sb.AppendLine($"Num Wins: {statsB.NumWins}");
-                    sb.AppendLine($"Num Losses: {statsB.NumLosses}");
-                    sb.AppendLine($"Num Draws: {statsB.NumDraws}");
-                    sb.AppendLine($"Num Timeouts: {statsB.NumTimeouts}");
-                    sb.AppendLine($"Num Illegal Moves: {statsB.NumIllegalMoves}");
+
+                    // Parseable version for file (key=value format)
+                    StringBuilder parseable = new StringBuilder();
+                    parseable.AppendLine($"{statsA.BotName}_Wins={statsA.NumWins}");
+                    parseable.AppendLine($"{statsA.BotName}_Losses={statsA.NumLosses}");
+                    parseable.AppendLine($"{statsA.BotName}_Draws={statsA.NumDraws}");
+                    parseable.AppendLine($"{statsA.BotName}_Timeouts={statsA.NumTimeouts}");
+                    parseable.AppendLine($"{statsA.BotName}_IllegalMoves={statsA.NumIllegalMoves}");
+                    parseable.AppendLine($"{statsB.BotName}_Wins={statsB.NumWins}");
+                    parseable.AppendLine($"{statsB.BotName}_Losses={statsB.NumLosses}");
+                    parseable.AppendLine($"{statsB.BotName}_Draws={statsB.NumDraws}");
+                    parseable.AppendLine($"{statsB.BotName}_Timeouts={statsB.NumTimeouts}");
+                    parseable.AppendLine($"{statsB.BotName}_IllegalMoves={statsB.NumIllegalMoves}");
 
                     string filePath = "bot_match_results.txt";
-                    File.WriteAllText(filePath, sb.ToString());
+                    File.WriteAllText(filePath, parseable.ToString());
 
-                    Log(sb.ToString());
-
+                    Log(parseable.ToString()); // This goes to console - human readable
+  
                     System.Environment.Exit(0);
                 }
 #endif
