@@ -146,8 +146,10 @@ public class V6_bot : IChessBot
             }
             if (best_score == int.MaxValue)
             {
+#if !CI
                 Console.WriteLine($"mate in {depth} found"); //this works great
                 // but it might becom e dangerous if there is very little time
+#endif
                 return moveAtThisDepth;
             }
             if (timer.MillisecondsElapsedThisTurn >= time_limit)
@@ -178,7 +180,9 @@ public class V6_bot : IChessBot
         float percentage = (float)time_left / total;
         if (percentage <= 0.1) //smaller than 10 %
         {
+#if !CI
             Console.WriteLine("panic mode");
+#endif
             return timer.MillisecondsRemaining / 30;
         }
         return total / 80; //gm games are never longer than 80 moves, and the stupider you are, shorter the game

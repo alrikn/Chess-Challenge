@@ -24,8 +24,8 @@ namespace ChessChallenge.Application
                 DrawStats(controller.BotStatsA);
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
-
-                if (controller.CurrGameNumber > 4)
+#if CI
+                if (controller.CurrGameNumber > 100)
                 {
                     Log($"Bot: {controller.BotStatsA.BotName}");
                     Log($"Num Wins: {controller.BotStatsA.NumWins}");
@@ -33,7 +33,7 @@ namespace ChessChallenge.Application
                     Log($"Num Draws: {controller.BotStatsA.NumDraws}");
                     Log($"Num Timeouts: {controller.BotStatsA.NumTimeouts}");
                     Log($"Num Illegal Moves: {controller.BotStatsA.NumIllegalMoves}");
-                    Log($"\n");
+                    Log($"");
                     Log($"Bot: {controller.BotStatsB.BotName}");
                     Log($"Num Wins: {controller.BotStatsB.NumWins}");
                     Log($"Num Losses: {controller.BotStatsB.NumLosses}");
@@ -42,7 +42,7 @@ namespace ChessChallenge.Application
                     Log($"Num Illegal Moves: {controller.BotStatsB.NumIllegalMoves}");
                     System.Environment.Exit(0);
                 }
-
+#endif
                 void DrawStats(ChallengeController.BotMatchStats stats)
                 {
                     DrawNextText(stats.BotName + ":", nameFontSize, Color.WHITE);

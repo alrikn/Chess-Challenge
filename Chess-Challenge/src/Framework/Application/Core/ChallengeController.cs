@@ -288,7 +288,21 @@ namespace ChessChallenge.Application
                 if (log)
                 {
                     Log("Game Over: " + result, false, ConsoleColor.Blue);
-                    Log($"Name = {BotStatsA.BotName}, Wins = {BotStatsA.NumWins}, Losses = {BotStatsA.NumLosses}");
+
+                    // Determine which bot won
+                    string winnerName = "None (Draw)";
+
+                    if (result == GameResult.BlackIsMated || result == GameResult.WhiteTimeout || result == GameResult.BlackIllegalMove)
+                    {
+                        // White won
+                        winnerName = botAPlaysWhite ? BotStatsA.BotName : BotStatsB.BotName;
+                    }
+                    else if (result == GameResult.WhiteIsMated || result == GameResult.BlackTimeout || result == GameResult.WhiteIllegalMove)
+                    {
+                        // Black won
+                        winnerName = botAPlaysWhite ? BotStatsB.BotName : BotStatsA.BotName;
+                    }
+                    Log($"Winner: {winnerName}");
                 }
 
                 string pgn = PGNCreator.CreatePGN(board, result, GetPlayerName(PlayerWhite), GetPlayerName(PlayerBlack));
