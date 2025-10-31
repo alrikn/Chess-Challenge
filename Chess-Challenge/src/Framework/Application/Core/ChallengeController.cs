@@ -292,12 +292,12 @@ namespace ChessChallenge.Application
                     // Determine which bot won
                     string winnerName = "None (Draw)";
 
-                    if (result == GameResult.BlackIsMated || result == GameResult.WhiteTimeout || result == GameResult.BlackIllegalMove)
+                    if (Arbiter.IsWhiteWinsResult(result))
                     {
                         // White won
                         winnerName = botAPlaysWhite ? BotStatsA.BotName : BotStatsB.BotName;
                     }
-                    else if (result == GameResult.WhiteIsMated || result == GameResult.BlackTimeout || result == GameResult.WhiteIllegalMove)
+                    else if (Arbiter.IsBlackWinsResult(result))
                     {
                         // Black won
                         winnerName = botAPlaysWhite ? BotStatsB.BotName : BotStatsA.BotName;
