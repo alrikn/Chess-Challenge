@@ -288,6 +288,7 @@ namespace ChessChallenge.Application
                 if (log)
                 {
                     Log("Game Over: " + result, false, ConsoleColor.Blue);
+                    Log($"Name = {BotStatsA.BotName}, Wins = {BotStatsA.NumWins}, Losses = {BotStatsA.NumLosses}");
                 }
 
                 string pgn = PGNCreator.CreatePGN(board, result, GetPlayerName(PlayerWhite), GetPlayerName(PlayerBlack));

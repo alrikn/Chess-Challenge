@@ -191,7 +191,7 @@ public class V7_bot : IChessBot
             best_depth_score = best_score;
             depth++; // Try deeper
         }
-        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}");
+        Console.WriteLine($"V7 - depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}");
         return best_move;
     }
 
