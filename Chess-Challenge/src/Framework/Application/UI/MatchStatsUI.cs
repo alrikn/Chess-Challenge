@@ -1,6 +1,7 @@
 ﻿using Raylib_cs;
 using System.Numerics;
 using System;
+using static ChessChallenge.Application.ConsoleHelper;
 
 namespace ChessChallenge.Application
 {
@@ -23,7 +24,24 @@ namespace ChessChallenge.Application
                 DrawStats(controller.BotStatsA);
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
-           
+
+                if (controller.CurrGameNumber > 4)
+                {
+                    Log($"Bot: {controller.BotStatsA.BotName}");
+                    Log($"Num Wins: {controller.BotStatsA.NumWins}");
+                    Log($"Num Losses: {controller.BotStatsA.NumLosses}");
+                    Log($"Num Draws: {controller.BotStatsA.NumDraws}");
+                    Log($"Num Timeouts: {controller.BotStatsA.NumTimeouts}");
+                    Log($"Num Illegal Moves: {controller.BotStatsA.NumIllegalMoves}");
+
+                    Log($"Bot: {controller.BotStatsB.BotName}");
+                    Log($"Num Wins: {controller.BotStatsB.NumWins}");
+                    Log($"Num Losses: {controller.BotStatsB.NumLosses}");
+                    Log($"Num Draws: {controller.BotStatsB.NumDraws}");
+                    Log($"Num Timeouts: {controller.BotStatsB.NumTimeouts}");
+                    Log($"Num Illegal Moves: {controller.BotStatsB.NumIllegalMoves}");
+                    System.Environment.Exit(0);
+                }
 
                 void DrawStats(ChallengeController.BotMatchStats stats)
                 {
