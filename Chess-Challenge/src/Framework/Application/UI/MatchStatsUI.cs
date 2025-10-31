@@ -25,21 +25,31 @@ namespace ChessChallenge.Application
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
 #if CI
-                if (controller.CurrGameNumber > 100)
+                if (controller.CurrGameNumber > 4)
                 {
-                    Log($"Bot: {controller.BotStatsA.BotName}");
-                    Log($"Num Wins: {controller.BotStatsA.NumWins}");
-                    Log($"Num Losses: {controller.BotStatsA.NumLosses}");
-                    Log($"Num Draws: {controller.BotStatsA.NumDraws}");
-                    Log($"Num Timeouts: {controller.BotStatsA.NumTimeouts}");
-                    Log($"Num Illegal Moves: {controller.BotStatsA.NumIllegalMoves}");
-                    Log($"");
-                    Log($"Bot: {controller.BotStatsB.BotName}");
-                    Log($"Num Wins: {controller.BotStatsB.NumWins}");
-                    Log($"Num Losses: {controller.BotStatsB.NumLosses}");
-                    Log($"Num Draws: {controller.BotStatsB.NumDraws}");
-                    Log($"Num Timeouts: {controller.BotStatsB.NumTimeouts}");
-                    Log($"Num Illegal Moves: {controller.BotStatsB.NumIllegalMoves}");
+                    var statsA = controller.BotStatsA;
+                    var statsB = controller.BotStatsB;
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine($"Bot: {statsA.BotName}");
+                    sb.AppendLine($"Num Wins: {statsA.NumWins}");
+                    sb.AppendLine($"Num Losses: {statsA.NumLosses}");
+                    sb.AppendLine($"Num Draws: {statsA.NumDraws}");
+                    sb.AppendLine($"Num Timeouts: {statsA.NumTimeouts}");
+                    sb.AppendLine($"Num Illegal Moves: {statsA.NumIllegalMoves}");
+                    sb.AppendLine();
+                    sb.AppendLine($"Bot: {statsB.BotName}");
+                    sb.AppendLine($"Num Wins: {statsB.NumWins}");
+                    sb.AppendLine($"Num Losses: {statsB.NumLosses}");
+                    sb.AppendLine($"Num Draws: {statsB.NumDraws}");
+                    sb.AppendLine($"Num Timeouts: {statsB.NumTimeouts}");
+                    sb.AppendLine($"Num Illegal Moves: {statsB.NumIllegalMoves}");
+
+                    string filePath = "bot_match_results.txt";
+                    File.WriteAllText(filePath, sb.ToString());
+
+                    Log(sb.ToString());
+
                     System.Environment.Exit(0);
                 }
 #endif
