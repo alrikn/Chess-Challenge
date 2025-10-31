@@ -40,10 +40,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: find the file
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find the file recursively
+        run: find . -name "bot_match_results.txt" -type f
+
+      - name: List all files recursively
+        run: find . -type f -name "*.txt" | head -20
+
+      - name: a tree
         run: tree
 
-      - name: find the file
-        run: cat bot_match_results.txt
-
+      - name: Check Chess-Challenge directory
+        run: |
+          if [ -f "Chess-Challenge/bot_match_results.txt" ]; then
+            echo "File found in Chess-Challenge/"
+            cat Chess-Challenge/bot_match_results.txt
+          else
+            echo "File not found in Chess-Challenge/"
+          fi
 
