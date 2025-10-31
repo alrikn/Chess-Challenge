@@ -24,7 +24,7 @@ namespace ChessChallenge.Application
                 }
             }
 
-            Raylib.InitWindow(screenWidth, screenHeight, "Chess Coding Challenge");
+            Raylib.InitWindow(screenWidth, screenHeight, "Can you win against StupidFish?");
             Raylib.SetTargetFPS(60);
 
             UpdateCamera(screenWidth, screenHeight);
@@ -89,7 +89,7 @@ namespace ChessChallenge.Application
                     }
                     else if (prefs[0] == '1')
                     {
-                        return Settings.ScreenSizeBig;
+                        return Settings.ScreenSizeSmall; // i don't like starting on big screen
                     }
                 }
             }

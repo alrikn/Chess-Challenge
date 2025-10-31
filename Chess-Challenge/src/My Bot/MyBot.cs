@@ -15,13 +15,14 @@ public class MyBot : IChessBot
         PieceType.Bishop => 300,
         PieceType.Rook => 500,
         PieceType.Queen => 900,
-        PieceType.King => 10000,
+        PieceType.King => 10, //cus king moves are usually
+        // not very important so we can place them last
         _ => 0
     };
 
-    Move[] make_sorted_moves(Board board)
+    Move[] make_sorted_moves(Board board, bool only_captures)
     {
-        Move[] allMoves = board.GetLegalMoves();
+        Move[] allMoves = board.GetLegalMoves(only_captures);
 
         int Score(Move move)
         {
@@ -35,12 +36,11 @@ public class MyBot : IChessBot
                 score += Value(victim.PieceType) * 10 - Value(attacker.PieceType);
             }
 
-            // Killer heuristic placeholder (you can integrate later)
-            // if (IsKiller(move)) score += 1000;
 
             // Prioritize checks and promotions
             //if (move.IsPromotion) score += 800;
-            if (board.SquareIsAttackedByOpponent(move.TargetSquare)) score -= 50;
+            if (board.SquareIsAttackedByOpponent(move.TargetSquare))
+                score -= 50;
 
             return score;
         }
@@ -90,12 +90,18 @@ public class MyBot : IChessBot
             else
                 result += 50;
         }
+        // i really want to implement smth like this but unfortunately
+        //if (board.SquareIsAttackedByOpponent(move.TargetSquare))
+        //{
+        //    if (is_player_turn)
+        //        result += -50;
+        //    else
+        //        result += 50;
+        //}
         //if (board.HasKingsideCastleRight(is_white) || board.HasQueensideCastleRight(is_white))
         //    result += 20;
         if (board.IsDraw())
-        {
-            return -110; //if down more tan one pawn
-        }
+            return 0; //if down more than one pawn
         return result;
     }
 
@@ -129,7 +135,7 @@ public class MyBot : IChessBot
     */
     Move iterative_deepening(Board board, Timer timer)
     {
-        Move[] all_moves = board.GetLegalMoves();
+        Move[] all_moves = make_sorted_moves(board, false);
         Random rng = new();
         Move best_move = all_moves[rng.Next(all_moves.Length)];
         bool is_white = board.IsWhiteToMove;
@@ -231,7 +237,7 @@ public class MyBot : IChessBot
                 beta = standPat;
         }
 
-        Move[] moves = board.GetLegalMoves(true); // captures only
+        Move[] moves = make_sorted_moves(board, true); // captures only
         foreach (var move in moves)
         {
             board.MakeMove(move);
@@ -270,7 +276,7 @@ public class MyBot : IChessBot
             return Quiescence(board, is_white, isMaximizing, alpha, beta);
         }
         //TODO: if its in check, add 1 to depth
-        Move[] all_moves = make_sorted_moves(board);
+        Move[] all_moves = make_sorted_moves(board, false);
         if (all_moves.Length == 0)
         {
             return rating(is_white, board);

@@ -43,19 +43,10 @@ namespace ChessChallenge.Application
                 File.WriteAllText(fullPath, pgns);
                 ConsoleHelper.Log("Saved games to " + fullPath, false, ConsoleColor.Blue);
             }
-            if (NextButtonInRow("Rules & Help", ref buttonPos, spacing, buttonSize))
-            {
-                FileHelper.OpenUrl("https://github.com/SebLague/Chess-Challenge");
-            }
             if (NextButtonInRow("Documentation", ref buttonPos, spacing, buttonSize))
             {
                 FileHelper.OpenUrl("https://seblague.github.io/chess-coding-challenge/documentation/");
             }
-            if (NextButtonInRow("Submission Page", ref buttonPos, spacing, buttonSize))
-            {
-                FileHelper.OpenUrl("https://forms.gle/6jjj8jxNQ5Ln53ie6");
-            }
-
             // Window and quit buttons
             buttonPos.Y += breakSpacing;
 
