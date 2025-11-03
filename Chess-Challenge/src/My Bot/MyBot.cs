@@ -8,6 +8,7 @@ public class MyBot : IChessBot
     // Piece values: null, pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
 
+    int global_current_depth;
     int Value(PieceType type) => type switch
     {
         PieceType.Pawn => 100,
@@ -139,13 +140,13 @@ public class MyBot : IChessBot
         Random rng = new();
         Move best_move = all_moves[rng.Next(all_moves.Length)];
         bool is_white = board.IsWhiteToMove;
-        int time_limit = calculate_best_time(timer);
+        //int time_limit = calculate_best_time(timer);
 
         int depth = 1;
         int num_of_update = 0;
         long best_score = int.MinValue; //this gets updated inside the loop
         long best_depth_score = best_score; //this gets updated when a depth has been fully done
-        while (timer.MillisecondsElapsedThisTurn < time_limit)
+        while (keep_thinking(timer))
         {
             //TODO: on each interative deeping, sort it so the move that turned out best last time is the first that this one takes
             //this is cus apparently its the move that is the most likely to be the best (so pruning should be better)
@@ -168,7 +169,7 @@ public class MyBot : IChessBot
             foreach (Move move in sub_moves) //shouldn't we be able to do minmax immediately?
             {
                 board.MakeMove(move);
-                long score = Minimax(board, depth -1, false, is_white, timer, int.MinValue, int.MaxValue, time_limit);
+                long score = Minimax(board, depth -1, false, is_white, timer, int.MinValue, int.MaxValue);
                 board.UndoMove(move);
 
                 if (score > best_score)
@@ -177,7 +178,7 @@ public class MyBot : IChessBot
                     num_of_update++;
                     moveAtThisDepth = move;
                 }
-                if (timer.MillisecondsElapsedThisTurn >= time_limit)
+                if (!keep_thinking(timer))
                     break;
             }
             if (best_score == int.MaxValue)
@@ -188,15 +189,16 @@ public class MyBot : IChessBot
                 // but it might becom e dangerous if there is very little time
                 return moveAtThisDepth;
             }
-            if (timer.MillisecondsElapsedThisTurn >= time_limit)
+            if (!keep_thinking(timer))
                 break;
 
             best_move = moveAtThisDepth;
             best_depth_score = best_score;
             depth++; // Try deeper
+            global_current_depth = depth;
         }
 #if !CI
-        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score}; time_limit = {time_limit}");
+        Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score};");
 #endif
         return best_move;
     }
@@ -222,6 +224,32 @@ public class MyBot : IChessBot
             return timer.MillisecondsRemaining / 30;
         }
         return total / 80; //gm games are never longer than 80 moves, and the stupider you are, shorter the game
+    }
+
+    bool keep_thinking(Timer timer)
+    {
+        int total = timer.GameStartTimeMilliseconds;
+        int time_left = timer.MillisecondsRemaining;
+        int time_spent = timer.MillisecondsElapsedThisTurn;
+        int time_allocated = 0; //how much time we are willing to spend this turn
+
+        float percentage = (float)time_left / total;
+        if (percentage <= 0.1) //smaller than 10 %
+        {
+#if !CI
+            Console.WriteLine("panic mode");
+#endif
+            time_allocated = timer.MillisecondsRemaining / 30;
+        }
+        else
+        {
+            time_allocated = total / 80; //gm games are never longer than 80 moves, and the stupider you are, shorter the game
+        }
+        if (global_current_depth <= 2)
+            return true;
+        if (time_allocated < timer.MillisecondsElapsedThisTurn)
+            return true;
+        return false;
     }
 
     long Quiescence(Board board, bool is_white, bool isMaximizing, long alpha, long beta)
@@ -273,9 +301,9 @@ public class MyBot : IChessBot
     ** if no time or is unplayable, or at end of tree return
     ** if our turn, we look for highest value, if opponet turn, they try to find lowest value
     */
-    long Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer, long alpha, long beta, int time_limit)
+    long Minimax(Board board, int depth, bool isMaximizing, bool is_white, Timer timer, long alpha, long beta)
     {
-        if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || timer.MillisecondsElapsedThisTurn >= time_limit)
+        if (depth == 0 || board.IsInCheckmate() || board.IsDraw() || !keep_thinking(timer))
         {
             if (board.IsInCheckmate() || board.IsDraw())
                 return rating(is_white, board);
@@ -302,7 +330,7 @@ public class MyBot : IChessBot
         foreach (Move move in all_moves)
         {
             board.MakeMove(move);
-            long eval = Minimax(board, depth - 1, !isMaximizing, is_white, timer, alpha, beta, time_limit);
+            long eval = Minimax(board, depth - 1, !isMaximizing, is_white, timer, alpha, beta);
             board.UndoMove(move);
 
             if (isMaximizing)
@@ -319,7 +347,7 @@ public class MyBot : IChessBot
             }
             if (beta <= alpha)
                 break;
-            if (timer.MillisecondsElapsedThisTurn >= time_limit)
+            if (!keep_thinking(timer))
                 break;
         }
         return bestEval;
