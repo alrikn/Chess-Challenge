@@ -245,9 +245,7 @@ public class MyBot : IChessBot
         {
             time_allocated = total / 80; //gm games are never longer than 80 moves, and the stupider you are, shorter the game
         }
-        if (global_current_depth <= 2)
-            return true;
-        if (time_allocated < timer.MillisecondsElapsedThisTurn)
+        if (global_current_depth <= 2 || time_allocated > timer.MillisecondsElapsedThisTurn)
             return true;
         return false;
     }
