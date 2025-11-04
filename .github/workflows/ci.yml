@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-and-run:
-    name: Build and Run (Linux)
+    name: Build and Run
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +45,7 @@ jobs:
 
   check_output:
     needs: build-and-run
-    name: cat test
+    name: Analyse Results
     runs-on: ubuntu-latest
 
     steps:
@@ -53,9 +53,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bot-match-results
-
-      - name: a tree
-        run: tree
 
       - name: Display results
         run: cat bot_match_results.txt
