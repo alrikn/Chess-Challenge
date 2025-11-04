@@ -1,4 +1,4 @@
-﻿using ChessChallenge.API;
+using ChessChallenge.API;
 using System.Collections.Generic;
 
 using System;
@@ -244,7 +244,7 @@ public class MyBot : IChessBot
         }
         else
         {
-            time_allocated = total / 80; //gm games are never longer than 80 moves, and the stupider you are, shorter the game
+            time_allocated = total / 75; //gm games are never longer than 80 moves, and the stupider you are, shorter the game
         }
         if (global_current_depth <= 2 || time_allocated > timer.MillisecondsElapsedThisTurn)
             return true;
