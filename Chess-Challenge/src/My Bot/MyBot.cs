@@ -197,7 +197,6 @@ public class MyBot : IChessBot
             depth++; // Try deeper
             global_current_depth = depth;
         }
-        Console.WriteLine($"global_current_depth: {global_current_depth}");
 #if !CI
         Console.WriteLine($"depth reached: {depth - 1}; num of updates: {num_of_update}; score = {best_depth_score};");
 #endif
