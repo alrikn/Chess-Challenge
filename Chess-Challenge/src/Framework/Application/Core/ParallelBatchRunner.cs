@@ -137,29 +137,28 @@ namespace ChessChallenge.Application
 
             var stopwatch = Stopwatch.StartNew();
 
+            void PrintProgress()
+            {
+                var elapsed = stopwatch.Elapsed;
+                var completed = stats.GamesCompleted;
+                var rate = completed / Math.Max(elapsed.TotalSeconds, 0.0001);
+                var remaining = totalGames - completed;
+                var eta = remaining / Math.Max(rate, 0.0001);
+
+                Console.WriteLine(
+                    $"Progress: {completed}/{totalGames} ({(completed * 100.0 / totalGames):F1}%) | " +
+                    $"Rate: {rate:F1} games/sec | " +
+                    $"Elapsed: {elapsed:mm\\:ss} | " +
+                    $"ETA: {TimeSpan.FromSeconds(eta):mm\\:ss} | " +
+                    $"{botAName} {stats.BotAWins}-{stats.BotALosses}-{stats.BotADraws}"
+                );
+            }
             // Create all game tasks
             var gameTasks = new List<Task>();
 
             // Use SemaphoreSlim to limit concurrent games
             using var semaphore = new SemaphoreSlim(maxParallelGames);
 
-            // Progress reporting
-            var progressTimer = new System.Timers.Timer(2000); // Report every 2 seconds
-            progressTimer.Elapsed += (s, e) =>
-            {
-                var elapsed = stopwatch.Elapsed;
-                var completed = stats.GamesCompleted;
-                var rate = completed / elapsed.TotalSeconds;
-                var remaining = totalGames - completed;
-                var eta = remaining / rate;
-
-                Console.WriteLine($"Progress: {completed}/{totalGames} ({completed * 100.0 / totalGames:F1}%) | " +
-                                $"Rate: {rate:F1} games/sec | " +
-                                $"Elapsed: {elapsed:mm\\:ss} | " +
-                                $"ETA: {TimeSpan.FromSeconds(eta):mm\\:ss} | " +
-                                $"{botAName} {stats.BotAWins}-{stats.BotALosses}-{stats.BotADraws}");
-            };
-            progressTimer.Start();
 
             // Create tasks for all games
             for (int fenIndex = 0; fenIndex < startingFens.Length; fenIndex++)
@@ -176,6 +175,7 @@ namespace ChessChallenge.Application
                         var runner = new HeadlessGameRunner(botA, botB);
                         var result = runner.RunGame(fen, gameIndex, botAPlaysWhite: true);
                         stats.RecordResult(result);
+                        PrintProgress();
                     }
                     finally
                     {
@@ -192,6 +192,7 @@ namespace ChessChallenge.Application
                         var runner = new HeadlessGameRunner(botA, botB);
                         var result = runner.RunGame(fen, gameIndex + 1, botAPlaysWhite: false);
                         stats.RecordResult(result);
+                        PrintProgress();
                     }
                     finally
                     {
@@ -204,7 +205,6 @@ namespace ChessChallenge.Application
             await Task.WhenAll(gameTasks);
 
             stopwatch.Stop();
-            progressTimer.Stop();
 
             // Final report
             Console.WriteLine($"\n=== Batch Complete ===");
